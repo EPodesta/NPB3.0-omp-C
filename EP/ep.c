@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
     boolean verified;
     char size[13+1];	/* character*13 */
 
-	omp_set_num_threads(16);
+	omp_set_num_threads(atoi(argv[1]));
 
 /*
 c   Because the size of the problem is too large to store in a 32-bit

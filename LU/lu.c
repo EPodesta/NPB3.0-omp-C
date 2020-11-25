@@ -102,7 +102,7 @@ c
   double mflops;
   int nthreads = 1;
 
-  omp_set_num_threads(16);
+	omp_set_num_threads(atoi(argv[1]));
 
 /*--------------------------------------------------------------------
 c   read input data

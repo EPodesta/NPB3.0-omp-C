@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
   char class;
   FILE *fp;
 
-  omp_set_num_threads(1);
+  omp_set_num_threads(atoi(argv[1]));
 
 /*--------------------------------------------------------------------
 c      Read input file (if it exists), else take

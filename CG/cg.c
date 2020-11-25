@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
     boolean verified;
     double zeta_verify_value, epsilon;
 
-	omp_set_num_threads(16);
+	omp_set_num_threads(atoi(argv[1]));
 
     firstrow = 1;
     lastrow  = NA;

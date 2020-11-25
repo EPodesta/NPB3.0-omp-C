@@ -85,7 +85,7 @@ c------------------------------------------------------------------------*/
     double t, tinit, mflops;
     int nthreads = 1;
 
-	omp_set_num_threads(16);
+	omp_set_num_threads(atoi(argv[1]));
 
 /*-------------------------------------------------------------------------
 c These arrays are in common because they are quite large

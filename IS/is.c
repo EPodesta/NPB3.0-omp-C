@@ -589,7 +589,7 @@ main( argc, argv )
     int		    nthreads = 1;
     double          timecounter, maxtime;
 
-	omp_set_num_threads(16);
+	omp_set_num_threads(atoi(argv[1]));
 
 
 

@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 c-------------------------------------------------------------------*/
 
     int i, ierr;
-	omp_set_num_threads(16);
+	omp_set_num_threads(atoi(argv[1]));
 
 /*------------------------------------------------------------------
 c u0, u1, u2 are the main arrays in the problem.
