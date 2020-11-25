@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------
-  
+
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - BT
 
   This benchmark is an OpenMP C version of the NPB BT code.
-  
-  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions 
-  in "NPB 2.3-serial" developed by NAS. 3.0 translation is performed by the UVSQ. 
+
+  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions
+  in "NPB 2.3-serial" developed by NAS. 3.0 translation is performed by the UVSQ.
 
   Permission to use, copy, distribute and modify this software for any
   purpose with or without fee is hereby granted.
@@ -14,9 +14,9 @@
   Information on OpenMP activities at RWCP is available at:
 
            http://pdplab.trc.rwcp.or.jp/pdperf/Omni/
-  
+
   Information on NAS Parallel Benchmarks 2.3 is available at:
-  
+
            http://www.nas.nasa.gov/NAS/NPB/
 
 --------------------------------------------------------------------*/
@@ -29,7 +29,7 @@
   OpenMP C version: S. Satoh
 
   3.0 structure translation: M. Popov
-  
+
 --------------------------------------------------------------------*/
 
 #include "npb-C.h"
@@ -72,7 +72,7 @@ static void z_solve_cell(void);
       program BT
 c-------------------------------------------------------------------*/
 int main(int argc, char **argv) {
-    
+
   int niter, step, n3;
   int nthreads = 1;
   double navg, mflops;
@@ -81,6 +81,8 @@ int main(int argc, char **argv) {
   boolean verified;
   char class;
   FILE *fp;
+
+  omp_set_num_threads(16);
 
 /*--------------------------------------------------------------------
 c      Root node reads input file (if it exists) else takes
@@ -113,7 +115,7 @@ c-------------------------------------------------------------------*/
   printf(" Size: %3dx%3dx%3d\n",
 	 grid_points[0], grid_points[1], grid_points[2]);
   printf(" Iterations: %3d   dt: %10.6f\n", niter, dt);
-  
+
   if (grid_points[0] > IMAX ||
       grid_points[1] > JMAX ||
       grid_points[2] > KMAX) {
@@ -133,12 +135,12 @@ c      do one time step to touch all code, and reinitialize
 c-------------------------------------------------------------------*/
 
   adi();
-  
+
   initialize();
 
   timer_clear(1);
   timer_start(1);
-   
+
   for (step = 1; step <= niter; step++) {
 
     if (step%20 == 0 || step == 1) {
@@ -146,18 +148,18 @@ c-------------------------------------------------------------------*/
     }
     adi();
   }
-  
+
 #pragma omp parallel
-{   
+{
 #if defined(_OPENMP)
-#pragma omp master  
+#pragma omp master
   nthreads = omp_get_num_threads();
 #endif /* _OPENMP */
 } /* end parallel */
 
   timer_stop(1);
   tmax = timer_read(1);
-       
+
   verify(niter, &class, &verified);
 
   n3 = grid_points[0]*grid_points[1]*grid_points[2];
@@ -168,10 +170,10 @@ c-------------------------------------------------------------------*/
   } else {
     mflops = 0.0;
   }
-  c_print_results("BT", class, grid_points[0], 
+  c_print_results("BT", class, grid_points[0],
 		  grid_points[1], grid_points[2], niter, nthreads,
-		  tmax, mflops, "          floating point", 
-		  verified, NPBVERSION,COMPILETIME, CS1, CS2, CS3, CS4, CS5, 
+		  tmax, mflops, "          floating point",
+		  verified, NPBVERSION,COMPILETIME, CS1, CS2, CS3, CS4, CS5,
 		  CS6, "(none)");
 }
 
@@ -185,7 +187,7 @@ c     addition of update to the vector u
 c-------------------------------------------------------------------*/
 
   int i, j, k, m;
-  
+
 #pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
@@ -312,9 +314,9 @@ c-------------------------------------------------------------------*/
   int m, i, j, k, ip1, im1, jp1, jm1, km1, kp1;
 
 /*--------------------------------------------------------------------
-c     initialize                                  
+c     initialize
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 0; i < grid_points[0]; i++) {
     for (j = 0; j < grid_points[1]; j++) {
       for (k = 0; k < grid_points[2]; k++) {
@@ -326,12 +328,12 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     xi-direction flux differences                      
+c     xi-direction flux differences
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (j = 1; j < grid_points[1]-1; j++) {
     eta = (double)j * dnym1;
-    
+
     for (k = 1; k < grid_points[2]-1; k++) {
       zeta = (double)k * dnzm1;
 
@@ -350,12 +352,12 @@ c-------------------------------------------------------------------*/
 	}
 
 	cuf[i]   = buf[i][1] * buf[i][1];
-	buf[i][0] = cuf[i] + buf[i][2] * buf[i][2] + 
+	buf[i][0] = cuf[i] + buf[i][2] * buf[i][2] +
 	  buf[i][3] * buf[i][3];
 	q[i] = 0.5*(buf[i][1]*ue[i][1] + buf[i][2]*ue[i][2] +
 		    buf[i][3]*ue[i][3]);
       }
-               
+
       for (i = 1; i < grid_points[0]-1; i++) {
 	im1 = i-1;
 	ip1 = i+1;
@@ -374,7 +376,7 @@ c-------------------------------------------------------------------*/
 	  tx2 * (ue[ip1][2]*buf[ip1][1]-ue[im1][2]*buf[im1][1])+
 	  xxcon2*(buf[ip1][2]-2.0*buf[i][2]+buf[im1][2])+
 	  dx3tx1*( ue[ip1][2]-2.0* ue[i][2]+ ue[im1][2]);
-                  
+
 	forcing[i][j][k][3] = forcing[i][j][k][3] -
 	  tx2*(ue[ip1][3]*buf[ip1][1]-ue[im1][3]*buf[im1][1])+
 	  xxcon2*(buf[ip1][3]-2.0*buf[i][3]+buf[im1][3])+
@@ -390,7 +392,7 @@ c-------------------------------------------------------------------*/
       }
 
 /*--------------------------------------------------------------------
-c     Fourth-order dissipation                         
+c     Fourth-order dissipation
 c-------------------------------------------------------------------*/
 
       for (m = 0; m < 5; m++) {
@@ -425,12 +427,12 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     eta-direction flux differences             
+c     eta-direction flux differences
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     xi = (double)i * dnxm1;
-    
+
     for (k = 1; k < grid_points[2]-1; k++) {
       zeta = (double)k * dnzm1;
 
@@ -441,7 +443,7 @@ c-------------------------------------------------------------------*/
 	for (m = 0; m < 5; m++) {
 	  ue[j][m] = dtemp[m];
 	}
-                  
+
 	dtpp = 1.0/dtemp[0];
 
 	for (m = 1; m <= 4; m++) {
@@ -449,7 +451,7 @@ c-------------------------------------------------------------------*/
 	}
 
 	cuf[j]   = buf[j][2] * buf[j][2];
-	buf[j][0] = cuf[j] + buf[j][1] * buf[j][1] + 
+	buf[j][0] = cuf[j] + buf[j][1] * buf[j][1] +
 	  buf[j][3] * buf[j][3];
 	q[j] = 0.5*(buf[j][1]*ue[j][1] + buf[j][2]*ue[j][2] +
 		    buf[j][3]*ue[j][3]);
@@ -458,7 +460,7 @@ c-------------------------------------------------------------------*/
       for (j = 1; j < grid_points[1]-1; j++) {
 	jm1 = j-1;
 	jp1 = j+1;
-                  
+
 	forcing[i][j][k][0] = forcing[i][j][k][0] -
 	  ty2*( ue[jp1][2]-ue[jm1][2] )+
 	  dy1ty1*(ue[jp1][0]-2.0*ue[j][0]+ue[jm1][0]);
@@ -490,7 +492,7 @@ c-------------------------------------------------------------------*/
       }
 
 /*--------------------------------------------------------------------
-c     Fourth-order dissipation                      
+c     Fourth-order dissipation
 c-------------------------------------------------------------------*/
       for (m = 0; m < 5; m++) {
 	j = 1;
@@ -525,12 +527,12 @@ c-------------------------------------------------------------------*/
 
 
 /*--------------------------------------------------------------------
-c     zeta-direction flux differences                      
+c     zeta-direction flux differences
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     xi = (double)i * dnxm1;
-    
+
     for (j = 1; j < grid_points[1]-1; j++) {
       eta = (double)j * dnym1;
 
@@ -549,7 +551,7 @@ c-------------------------------------------------------------------*/
 	}
 
 	cuf[k]   = buf[k][3] * buf[k][3];
-	buf[k][0] = cuf[k] + buf[k][1] * buf[k][1] + 
+	buf[k][0] = cuf[k] + buf[k][1] * buf[k][1] +
 	  buf[k][2] * buf[k][2];
 	q[k] = 0.5*(buf[k][1]*ue[k][1] + buf[k][2]*ue[k][2] +
 		    buf[k][3]*ue[k][3]);
@@ -558,7 +560,7 @@ c-------------------------------------------------------------------*/
       for (k = 1; k < grid_points[2]-1; k++) {
 	km1 = k-1;
 	kp1 = k+1;
-                  
+
 	forcing[i][j][k][0] = forcing[i][j][k][0] -
 	  tz2*( ue[kp1][3]-ue[km1][3] )+
 	  dz1tz1*(ue[kp1][0]-2.0*ue[k][0]+ue[km1][0]);
@@ -590,7 +592,7 @@ c-------------------------------------------------------------------*/
       }
 
 /*--------------------------------------------------------------------
-c     Fourth-order dissipation                        
+c     Fourth-order dissipation
 c-------------------------------------------------------------------*/
       for (m = 0; m < 5; m++) {
 	k = 1;
@@ -624,9 +626,9 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     now change the sign of the forcing function, 
+c     now change the sign of the forcing function,
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
       for (k = 1; k < grid_points[2]-1; k++) {
@@ -649,7 +651,7 @@ static void exact_solution(double xi, double eta, double zeta,
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c     this function returns the exact solution at point xi, eta, zeta  
+c     this function returns the exact solution at point xi, eta, zeta
 c-------------------------------------------------------------------*/
 
   int m;
@@ -660,7 +662,7 @@ c-------------------------------------------------------------------*/
 					+ xi*ce[m][10]))) +
       eta*(ce[m][2] + eta*(ce[m][5] + eta*(ce[m][8]
 					   + eta*ce[m][11])))+
-      zeta*(ce[m][3] + zeta*(ce[m][6] + zeta*(ce[m][9] + 
+      zeta*(ce[m][3] + zeta*(ce[m][6] + zeta*(ce[m][9] +
 					      zeta*ce[m][12])));
   }
 }
@@ -676,18 +678,18 @@ static void initialize(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c     This subroutine initializes the field variable u using 
-c     tri-linear transfinite interpolation of the boundary values     
+c     This subroutine initializes the field variable u using
+c     tri-linear transfinite interpolation of the boundary values
 c-------------------------------------------------------------------*/
 
   int i, j, k, m, ix, iy, iz;
   double xi, eta, zeta, Pface[2][3][5], Pxi, Peta, Pzeta, temp[5];
 
 /*--------------------------------------------------------------------
-c  Later (in compute_rhs) we compute 1/u for every element. A few of 
-c  the corner elements are not used, but it convenient (and faster) 
-c  to compute the whole thing with a simple loop. Make sure those 
-c  values are nonzero by initializing the whole thing here. 
+c  Later (in compute_rhs) we compute 1/u for every element. A few of
+c  the corner elements are not used, but it convenient (and faster)
+c  to compute the whole thing with a simple loop. Make sure those
+c  values are nonzero by initializing the whole thing here.
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 0; i < IMAX; i++) {
@@ -701,44 +703,44 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     first store the "interpolated" values everywhere on the grid    
+c     first store the "interpolated" values everywhere on the grid
 c-------------------------------------------------------------------*/
 
 #pragma omp for
   for (i = 0; i < grid_points[0]; i++) {
     xi = (double)i * dnxm1;
-    
+
     for (j = 0; j < grid_points[1]; j++) {
       eta = (double)j * dnym1;
-      
+
       for (k = 0; k < grid_points[2]; k++) {
 	zeta = (double)k * dnzm1;
-                  
+
 	for (ix = 0; ix < 2; ix++) {
-	  exact_solution((double)ix, eta, zeta, 
+	  exact_solution((double)ix, eta, zeta,
                          &(Pface[ix][0][0]));
 	}
 
 	for (iy = 0; iy < 2; iy++) {
-	  exact_solution(xi, (double)iy , zeta, 
+	  exact_solution(xi, (double)iy , zeta,
                          &Pface[iy][1][0]);
 	}
 
 	for (iz = 0; iz < 2; iz++) {
-	  exact_solution(xi, eta, (double)iz,   
+	  exact_solution(xi, eta, (double)iz,
                          &Pface[iz][2][0]);
 	}
 
 	for (m = 0; m < 5; m++) {
-	  Pxi   = xi   * Pface[1][0][m] + 
+	  Pxi   = xi   * Pface[1][0][m] +
 	    (1.0-xi)   * Pface[0][0][m];
-	  Peta  = eta  * Pface[1][1][m] + 
+	  Peta  = eta  * Pface[1][1][m] +
 	    (1.0-eta)  * Pface[0][1][m];
-	  Pzeta = zeta * Pface[1][2][m] + 
+	  Pzeta = zeta * Pface[1][2][m] +
 	    (1.0-zeta) * Pface[0][2][m];
-                     
-	  u[i][j][k][m] = Pxi + Peta + Pzeta - 
-	    Pxi*Peta - Pxi*Pzeta - Peta*Pzeta + 
+
+	  u[i][j][k][m] = Pxi + Peta + Pzeta -
+	    Pxi*Peta - Pxi*Pzeta - Peta*Pzeta +
 	    Pxi*Peta*Pzeta;
 	}
       }
@@ -746,11 +748,11 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     now store the exact values on the boundaries        
+c     now store the exact values on the boundaries
 c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c     west face                                                  
+c     west face
 c-------------------------------------------------------------------*/
   i = 0;
   xi = 0.0;
@@ -767,7 +769,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     east face                                                      
+c     east face
 c-------------------------------------------------------------------*/
 
   i = grid_points[0]-1;
@@ -785,7 +787,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     south face                                                 
+c     south face
 c-------------------------------------------------------------------*/
   j = 0;
   eta = 0.0;
@@ -802,7 +804,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     north face                                    
+c     north face
 c-------------------------------------------------------------------*/
   j = grid_points[1]-1;
   eta = 1.0;
@@ -819,7 +821,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     bottom face                                       
+c     bottom face
 c-------------------------------------------------------------------*/
   k = 0;
   zeta = 0.0;
@@ -836,7 +838,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     top face     
+c     top face
 c-------------------------------------------------------------------*/
   k = grid_points[2]-1;
   zeta = 1.0;
@@ -887,7 +889,7 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c     next, set all diagonal values to 1. This is overkill, but convenient
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 0; i < grid_points[0]; i++) {
     for (j = 0; j < grid_points[1]; j++) {
       for (k = 0; k < grid_points[2]; k++) {
@@ -917,7 +919,7 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c     determine a (labeled f) and n jacobians
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (j = 1; j < grid_points[1]-1; j++) {
     for (k = 1; k < grid_points[2]-1; k++) {
       for (i = 0; i < grid_points[0]; i++) {
@@ -926,7 +928,7 @@ c-------------------------------------------------------------------*/
 	tmp2 = tmp1 * tmp1;
 	tmp3 = tmp1 * tmp2;
 /*--------------------------------------------------------------------
-c     
+c
 c-------------------------------------------------------------------*/
 	fjac[ i][ j][ k][0][0] = 0.0;
 	fjac[ i][ j][ k][0][1] = 1.0;
@@ -934,7 +936,7 @@ c-------------------------------------------------------------------*/
 	fjac[ i][ j][ k][0][3] = 0.0;
 	fjac[ i][ j][ k][0][4] = 0.0;
 
-	fjac[ i][ j][ k][1][0] = -(u[i][j][k][1] * tmp2 * 
+	fjac[ i][ j][ k][1][0] = -(u[i][j][k][1] * tmp2 *
 				    u[i][j][k][1])
 	  + c2 * 0.50 * (u[i][j][k][1] * u[i][j][k][1]
 		       + u[i][j][k][2] * u[i][j][k][2]
@@ -962,7 +964,7 @@ c-------------------------------------------------------------------*/
 				     + u[i][j][k][3] * u[i][j][k][3] ) * tmp2
 				- c1 * ( u[i][j][k][4] * tmp1 ) )
 	  * ( u[i][j][k][1] * tmp1 );
-	fjac[i][j][k][4][1] = c1 *  u[i][j][k][4] * tmp1 
+	fjac[i][j][k][4][1] = c1 *  u[i][j][k][4] * tmp1
 	  - 0.50 * c2
 	  * (  3.0*u[i][j][k][1]*u[i][j][k][1]
 	       + u[i][j][k][2]*u[i][j][k][2]
@@ -1192,7 +1194,7 @@ static void lhsy(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c     This function computes the left hand side for the three y-factors   
+c     This function computes the left hand side for the three y-factors
 c-------------------------------------------------------------------*/
 
   int i, j, k;
@@ -1245,19 +1247,19 @@ c-------------------------------------------------------------------*/
 					+ u[i][j][k][2] * u[i][j][k][2]
 					+ u[i][j][k][3] * u[i][j][k][3] )
 				* tmp2
-				- c1 * u[i][j][k][4] * tmp1 ) 
+				- c1 * u[i][j][k][4] * tmp1 )
 	  * u[i][j][k][2] * tmp1;
-	fjac[i][j][k][4][1] = - c2 * u[i][j][k][1]*u[i][j][k][2] 
+	fjac[i][j][k][4][1] = - c2 * u[i][j][k][1]*u[i][j][k][2]
 	  * tmp2;
-	fjac[i][j][k][4][2] = c1 * u[i][j][k][4] * tmp1 
-	  - 0.50 * c2 
+	fjac[i][j][k][4][2] = c1 * u[i][j][k][4] * tmp1
+	  - 0.50 * c2
 	  * ( (  u[i][j][k][1]*u[i][j][k][1]
 		 + 3.0 * u[i][j][k][2]*u[i][j][k][2]
 		 + u[i][j][k][3]*u[i][j][k][3] )
 	      * tmp2 );
 	fjac[i][j][k][4][3] = - c2 * ( u[i][j][k][2]*u[i][j][k][3] )
 	  * tmp2;
-	fjac[i][j][k][4][4] = c1 * u[i][j][k][2] * tmp1; 
+	fjac[i][j][k][4][4] = c1 * u[i][j][k][2] * tmp1;
 
 	njac[i][j][k][0][0] = 0.0;
 	njac[i][j][k][0][1] = 0.0;
@@ -1303,7 +1305,7 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c     now joacobians set, so form left hand side in y direction
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
       for (k = 1; k < grid_points[2]-1; k++) {
@@ -1408,7 +1410,7 @@ c-------------------------------------------------------------------*/
 	lhs[i][j][k][BB][4][2] = tmp1 * 2.0 * njac[i][j][k][4][2];
 	lhs[i][j][k][BB][4][3] = tmp1 * 2.0 * njac[i][j][k][4][3];
 	lhs[i][j][k][BB][4][4] = 1.0
-	  + tmp1 * 2.0 * njac[i][j][k][4][4] 
+	  + tmp1 * 2.0 * njac[i][j][k][4][4]
 	  + tmp1 * 2.0 * dy5;
 
 	lhs[i][j][k][CC][0][0] =  tmp2 * fjac[i][j+1][k][0][0]
@@ -1486,7 +1488,7 @@ static void lhsz(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c     This function computes the left hand side for the three z-factors   
+c     This function computes the left hand side for the three z-factors
 c-------------------------------------------------------------------*/
 
   int i, j, k;
@@ -1510,7 +1512,7 @@ c---------------------------------------------------------------------*/
 	fjac[i][j][k][0][3] = 1.0;
 	fjac[i][j][k][0][4] = 0.0;
 
-	fjac[i][j][k][1][0] = - ( u[i][j][k][1]*u[i][j][k][3] ) 
+	fjac[i][j][k][1][0] = - ( u[i][j][k][1]*u[i][j][k][3] )
 	  * tmp2;
 	fjac[i][j][k][1][1] = u[i][j][k][3] * tmp1;
 	fjac[i][j][k][1][2] = 0.0;
@@ -1524,7 +1526,7 @@ c---------------------------------------------------------------------*/
 	fjac[i][j][k][2][3] = u[i][j][k][2] * tmp1;
 	fjac[i][j][k][2][4] = 0.0;
 
-	fjac[i][j][k][3][0] = - (u[i][j][k][3]*u[i][j][k][3] * tmp2 ) 
+	fjac[i][j][k][3][0] = - (u[i][j][k][3]*u[i][j][k][3] * tmp2 )
 	  + 0.50 * c2 * ( (  u[i][j][k][1] * u[i][j][k][1]
 			     + u[i][j][k][2] * u[i][j][k][2]
 			     + u[i][j][k][3] * u[i][j][k][3] ) * tmp2 );
@@ -1778,7 +1780,7 @@ static void compute_rhs(void) {
   double rho_inv, uijk, up1, um1, vijk, vp1, vm1, wijk, wp1, wm1;
 
 /*--------------------------------------------------------------------
-c     compute the reciprocal of density, and the kinetic energy, 
+c     compute the reciprocal of density, and the kinetic energy,
 c     and the speed of sound.
 c-------------------------------------------------------------------*/
 #pragma omp for nowait
@@ -1790,7 +1792,7 @@ c-------------------------------------------------------------------*/
 	us[i][j][k] = u[i][j][k][1] * rho_inv;
 	vs[i][j][k] = u[i][j][k][2] * rho_inv;
 	ws[i][j][k] = u[i][j][k][3] * rho_inv;
-	square[i][j][k] = 0.5 * (u[i][j][k][1]*u[i][j][k][1] + 
+	square[i][j][k] = 0.5 * (u[i][j][k][1]*u[i][j][k][1] +
 				 u[i][j][k][2]*u[i][j][k][2] +
 				 u[i][j][k][3]*u[i][j][k][3] ) * rho_inv;
 	qs[i][j][k] = square[i][j][k] * rho_inv;
@@ -1799,9 +1801,9 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c copy the exact forcing term to the right hand side;  because 
+c copy the exact forcing term to the right hand side;  because
 c this forcing term is known, we can store it on the whole grid
-c including the boundary                   
+c including the boundary
 c-------------------------------------------------------------------*/
 
 #pragma omp for
@@ -1816,7 +1818,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     compute xi-direction fluxes 
+c     compute xi-direction fluxes
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
@@ -1826,64 +1828,64 @@ c-------------------------------------------------------------------*/
 	up1  = us[i+1][j][k];
 	um1  = us[i-1][j][k];
 
-	rhs[i][j][k][0] = rhs[i][j][k][0] + dx1tx1 * 
-	  (u[i+1][j][k][0] - 2.0*u[i][j][k][0] + 
+	rhs[i][j][k][0] = rhs[i][j][k][0] + dx1tx1 *
+	  (u[i+1][j][k][0] - 2.0*u[i][j][k][0] +
 	   u[i-1][j][k][0]) -
 	  tx2 * (u[i+1][j][k][1] - u[i-1][j][k][1]);
 
-	rhs[i][j][k][1] = rhs[i][j][k][1] + dx2tx1 * 
-	  (u[i+1][j][k][1] - 2.0*u[i][j][k][1] + 
+	rhs[i][j][k][1] = rhs[i][j][k][1] + dx2tx1 *
+	  (u[i+1][j][k][1] - 2.0*u[i][j][k][1] +
 	   u[i-1][j][k][1]) +
 	  xxcon2*con43 * (up1 - 2.0*uijk + um1) -
-	  tx2 * (u[i+1][j][k][1]*up1 - 
+	  tx2 * (u[i+1][j][k][1]*up1 -
 		 u[i-1][j][k][1]*um1 +
 		 (u[i+1][j][k][4]- square[i+1][j][k]-
 		  u[i-1][j][k][4]+ square[i-1][j][k])*
 		 c2);
 
-	rhs[i][j][k][2] = rhs[i][j][k][2] + dx3tx1 * 
+	rhs[i][j][k][2] = rhs[i][j][k][2] + dx3tx1 *
 	  (u[i+1][j][k][2] - 2.0*u[i][j][k][2] +
 	   u[i-1][j][k][2]) +
 	  xxcon2 * (vs[i+1][j][k] - 2.0*vs[i][j][k] +
 		    vs[i-1][j][k]) -
-	  tx2 * (u[i+1][j][k][2]*up1 - 
+	  tx2 * (u[i+1][j][k][2]*up1 -
 		 u[i-1][j][k][2]*um1);
 
-	rhs[i][j][k][3] = rhs[i][j][k][3] + dx4tx1 * 
+	rhs[i][j][k][3] = rhs[i][j][k][3] + dx4tx1 *
 	  (u[i+1][j][k][3] - 2.0*u[i][j][k][3] +
 	   u[i-1][j][k][3]) +
 	  xxcon2 * (ws[i+1][j][k] - 2.0*ws[i][j][k] +
 		    ws[i-1][j][k]) -
-	  tx2 * (u[i+1][j][k][3]*up1 - 
+	  tx2 * (u[i+1][j][k][3]*up1 -
 		 u[i-1][j][k][3]*um1);
 
-	rhs[i][j][k][4] = rhs[i][j][k][4] + dx5tx1 * 
+	rhs[i][j][k][4] = rhs[i][j][k][4] + dx5tx1 *
 	  (u[i+1][j][k][4] - 2.0*u[i][j][k][4] +
 	   u[i-1][j][k][4]) +
 	  xxcon3 * (qs[i+1][j][k] - 2.0*qs[i][j][k] +
 		    qs[i-1][j][k]) +
-	  xxcon4 * (up1*up1 -       2.0*uijk*uijk + 
+	  xxcon4 * (up1*up1 -       2.0*uijk*uijk +
 		    um1*um1) +
-	  xxcon5 * (u[i+1][j][k][4]*rho_i[i+1][j][k] - 
+	  xxcon5 * (u[i+1][j][k][4]*rho_i[i+1][j][k] -
 		    2.0*u[i][j][k][4]*rho_i[i][j][k] +
 		    u[i-1][j][k][4]*rho_i[i-1][j][k]) -
-	  tx2 * ( (c1*u[i+1][j][k][4] - 
+	  tx2 * ( (c1*u[i+1][j][k][4] -
 		   c2*square[i+1][j][k])*up1 -
-		  (c1*u[i-1][j][k][4] - 
+		  (c1*u[i-1][j][k][4] -
 		   c2*square[i-1][j][k])*um1 );
       }
     }
   }
 
 /*--------------------------------------------------------------------
-c     add fourth order xi-direction dissipation               
+c     add fourth order xi-direction dissipation
 c-------------------------------------------------------------------*/
   i = 1;
 #pragma omp for nowait
   for (j = 1; j < grid_points[1]-1; j++) {
     for (k = 1; k < grid_points[2]-1; k++) {
       for (m = 0; m < 5; m++) {
-	rhs[i][j][k][m] = rhs[i][j][k][m]- dssp * 
+	rhs[i][j][k][m] = rhs[i][j][k][m]- dssp *
 	  ( 5.0*u[i][j][k][m] - 4.0*u[i+1][j][k][m] +
 	    u[i+2][j][k][m]);
       }
@@ -1895,7 +1897,7 @@ c-------------------------------------------------------------------*/
   for (j = 1; j < grid_points[1]-1; j++) {
     for (k = 1; k < grid_points[2]-1; k++) {
       for (m = 0; m < 5; m++) {
-	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp * 
+	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
 	  (-4.0*u[i-1][j][k][m] + 6.0*u[i][j][k][m] -
 	   4.0*u[i+1][j][k][m] + u[i+2][j][k][m]);
       }
@@ -1907,22 +1909,22 @@ c-------------------------------------------------------------------*/
     for (j = 1; j < grid_points[1]-1; j++) {
       for (k = 1; k < grid_points[2]-1; k++) {
 	for (m = 0; m < 5; m++) {
-	  rhs[i][j][k][m] = rhs[i][j][k][m] - dssp * 
-	    (  u[i-2][j][k][m] - 4.0*u[i-1][j][k][m] + 
-	       6.0*u[i][j][k][m] - 4.0*u[i+1][j][k][m] + 
+	  rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
+	    (  u[i-2][j][k][m] - 4.0*u[i-1][j][k][m] +
+	       6.0*u[i][j][k][m] - 4.0*u[i+1][j][k][m] +
 	       u[i+2][j][k][m] );
 	}
       }
     }
   }
-         
+
   i = grid_points[0]-3;
 #pragma omp for nowait
   for (j = 1; j < grid_points[1]-1; j++) {
     for (k = 1; k < grid_points[2]-1; k++) {
       for (m = 0; m < 5; m++) {
 	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
-	  ( u[i-2][j][k][m] - 4.0*u[i-1][j][k][m] + 
+	  ( u[i-2][j][k][m] - 4.0*u[i-1][j][k][m] +
 	    6.0*u[i][j][k][m] - 4.0*u[i+1][j][k][m] );
       }
     }
@@ -1941,7 +1943,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     compute eta-direction fluxes 
+c     compute eta-direction fluxes
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
@@ -1950,60 +1952,60 @@ c-------------------------------------------------------------------*/
 	vijk = vs[i][j][k];
 	vp1  = vs[i][j+1][k];
 	vm1  = vs[i][j-1][k];
-	rhs[i][j][k][0] = rhs[i][j][k][0] + dy1ty1 * 
-	  (u[i][j+1][k][0] - 2.0*u[i][j][k][0] + 
+	rhs[i][j][k][0] = rhs[i][j][k][0] + dy1ty1 *
+	  (u[i][j+1][k][0] - 2.0*u[i][j][k][0] +
 	   u[i][j-1][k][0]) -
 	  ty2 * (u[i][j+1][k][2] - u[i][j-1][k][2]);
-	rhs[i][j][k][1] = rhs[i][j][k][1] + dy2ty1 * 
-	  (u[i][j+1][k][1] - 2.0*u[i][j][k][1] + 
+	rhs[i][j][k][1] = rhs[i][j][k][1] + dy2ty1 *
+	  (u[i][j+1][k][1] - 2.0*u[i][j][k][1] +
 	   u[i][j-1][k][1]) +
-	  yycon2 * (us[i][j+1][k] - 2.0*us[i][j][k] + 
+	  yycon2 * (us[i][j+1][k] - 2.0*us[i][j][k] +
 		    us[i][j-1][k]) -
-	  ty2 * (u[i][j+1][k][1]*vp1 - 
+	  ty2 * (u[i][j+1][k][1]*vp1 -
 		 u[i][j-1][k][1]*vm1);
-	rhs[i][j][k][2] = rhs[i][j][k][2] + dy3ty1 * 
-	  (u[i][j+1][k][2] - 2.0*u[i][j][k][2] + 
+	rhs[i][j][k][2] = rhs[i][j][k][2] + dy3ty1 *
+	  (u[i][j+1][k][2] - 2.0*u[i][j][k][2] +
 	   u[i][j-1][k][2]) +
 	  yycon2*con43 * (vp1 - 2.0*vijk + vm1) -
-	  ty2 * (u[i][j+1][k][2]*vp1 - 
+	  ty2 * (u[i][j+1][k][2]*vp1 -
 		 u[i][j-1][k][2]*vm1 +
-		 (u[i][j+1][k][4] - square[i][j+1][k] - 
+		 (u[i][j+1][k][4] - square[i][j+1][k] -
 		  u[i][j-1][k][4] + square[i][j-1][k])
 		 *c2);
-	rhs[i][j][k][3] = rhs[i][j][k][3] + dy4ty1 * 
-	  (u[i][j+1][k][3] - 2.0*u[i][j][k][3] + 
+	rhs[i][j][k][3] = rhs[i][j][k][3] + dy4ty1 *
+	  (u[i][j+1][k][3] - 2.0*u[i][j][k][3] +
 	   u[i][j-1][k][3]) +
-	  yycon2 * (ws[i][j+1][k] - 2.0*ws[i][j][k] + 
+	  yycon2 * (ws[i][j+1][k] - 2.0*ws[i][j][k] +
 		    ws[i][j-1][k]) -
-	  ty2 * (u[i][j+1][k][3]*vp1 - 
+	  ty2 * (u[i][j+1][k][3]*vp1 -
 		 u[i][j-1][k][3]*vm1);
-	rhs[i][j][k][4] = rhs[i][j][k][4] + dy5ty1 * 
-	  (u[i][j+1][k][4] - 2.0*u[i][j][k][4] + 
+	rhs[i][j][k][4] = rhs[i][j][k][4] + dy5ty1 *
+	  (u[i][j+1][k][4] - 2.0*u[i][j][k][4] +
 	   u[i][j-1][k][4]) +
-	  yycon3 * (qs[i][j+1][k] - 2.0*qs[i][j][k] + 
+	  yycon3 * (qs[i][j+1][k] - 2.0*qs[i][j][k] +
 		    qs[i][j-1][k]) +
-	  yycon4 * (vp1*vp1       - 2.0*vijk*vijk + 
+	  yycon4 * (vp1*vp1       - 2.0*vijk*vijk +
 		    vm1*vm1) +
-	  yycon5 * (u[i][j+1][k][4]*rho_i[i][j+1][k] - 
+	  yycon5 * (u[i][j+1][k][4]*rho_i[i][j+1][k] -
 		    2.0*u[i][j][k][4]*rho_i[i][j][k] +
 		    u[i][j-1][k][4]*rho_i[i][j-1][k]) -
-	  ty2 * ((c1*u[i][j+1][k][4] - 
+	  ty2 * ((c1*u[i][j+1][k][4] -
 		  c2*square[i][j+1][k]) * vp1 -
-		 (c1*u[i][j-1][k][4] - 
+		 (c1*u[i][j-1][k][4] -
 		  c2*square[i][j-1][k]) * vm1);
       }
     }
   }
 
 /*--------------------------------------------------------------------
-c     add fourth order eta-direction dissipation         
+c     add fourth order eta-direction dissipation
 c-------------------------------------------------------------------*/
   j = 1;
 #pragma omp for nowait
   for (i = 1; i < grid_points[0]-1; i++) {
     for (k = 1; k < grid_points[2]-1; k++) {
       for (m = 0; m < 5; m++) {
-	rhs[i][j][k][m] = rhs[i][j][k][m]- dssp * 
+	rhs[i][j][k][m] = rhs[i][j][k][m]- dssp *
 	  ( 5.0*u[i][j][k][m] - 4.0*u[i][j+1][k][m] +
 	    u[i][j+2][k][m]);
       }
@@ -2015,7 +2017,7 @@ c-------------------------------------------------------------------*/
   for (i = 1; i < grid_points[0]-1; i++) {
     for (k = 1; k < grid_points[2]-1; k++) {
       for (m = 0; m < 5; m++) {
-	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp * 
+	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
 	  (-4.0*u[i][j-1][k][m] + 6.0*u[i][j][k][m] -
 	   4.0*u[i][j+1][k][m] + u[i][j+2][k][m]);
       }
@@ -2027,22 +2029,22 @@ c-------------------------------------------------------------------*/
     for (j = 3; j < grid_points[1]-3; j++) {
       for (k = 1; k < grid_points[2]-1; k++) {
 	for (m = 0; m < 5; m++) {
-	  rhs[i][j][k][m] = rhs[i][j][k][m] - dssp * 
-	    (  u[i][j-2][k][m] - 4.0*u[i][j-1][k][m] + 
-	       6.0*u[i][j][k][m] - 4.0*u[i][j+1][k][m] + 
+	  rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
+	    (  u[i][j-2][k][m] - 4.0*u[i][j-1][k][m] +
+	       6.0*u[i][j][k][m] - 4.0*u[i][j+1][k][m] +
 	       u[i][j+2][k][m] );
 	}
       }
     }
   }
-         
+
   j = grid_points[1]-3;
 #pragma omp for nowait
   for (i = 1; i < grid_points[0]-1; i++) {
     for (k = 1; k < grid_points[2]-1; k++) {
       for (m = 0; m < 5; m++) {
 	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
-	  ( u[i][j-2][k][m] - 4.0*u[i][j-1][k][m] + 
+	  ( u[i][j-2][k][m] - 4.0*u[i][j-1][k][m] +
 	    6.0*u[i][j][k][m] - 4.0*u[i][j+1][k][m] );
       }
     }
@@ -2061,7 +2063,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c     compute zeta-direction fluxes 
+c     compute zeta-direction fluxes
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
@@ -2071,60 +2073,60 @@ c-------------------------------------------------------------------*/
 	wp1  = ws[i][j][k+1];
 	wm1  = ws[i][j][k-1];
 
-	rhs[i][j][k][0] = rhs[i][j][k][0] + dz1tz1 * 
-	  (u[i][j][k+1][0] - 2.0*u[i][j][k][0] + 
+	rhs[i][j][k][0] = rhs[i][j][k][0] + dz1tz1 *
+	  (u[i][j][k+1][0] - 2.0*u[i][j][k][0] +
 	   u[i][j][k-1][0]) -
 	  tz2 * (u[i][j][k+1][3] - u[i][j][k-1][3]);
-	rhs[i][j][k][1] = rhs[i][j][k][1] + dz2tz1 * 
-	  (u[i][j][k+1][1] - 2.0*u[i][j][k][1] + 
+	rhs[i][j][k][1] = rhs[i][j][k][1] + dz2tz1 *
+	  (u[i][j][k+1][1] - 2.0*u[i][j][k][1] +
 	   u[i][j][k-1][1]) +
-	  zzcon2 * (us[i][j][k+1] - 2.0*us[i][j][k] + 
+	  zzcon2 * (us[i][j][k+1] - 2.0*us[i][j][k] +
 		    us[i][j][k-1]) -
-	  tz2 * (u[i][j][k+1][1]*wp1 - 
+	  tz2 * (u[i][j][k+1][1]*wp1 -
 		 u[i][j][k-1][1]*wm1);
-	rhs[i][j][k][2] = rhs[i][j][k][2] + dz3tz1 * 
-	  (u[i][j][k+1][2] - 2.0*u[i][j][k][2] + 
+	rhs[i][j][k][2] = rhs[i][j][k][2] + dz3tz1 *
+	  (u[i][j][k+1][2] - 2.0*u[i][j][k][2] +
 	   u[i][j][k-1][2]) +
-	  zzcon2 * (vs[i][j][k+1] - 2.0*vs[i][j][k] + 
+	  zzcon2 * (vs[i][j][k+1] - 2.0*vs[i][j][k] +
 		    vs[i][j][k-1]) -
-	  tz2 * (u[i][j][k+1][2]*wp1 - 
+	  tz2 * (u[i][j][k+1][2]*wp1 -
 		 u[i][j][k-1][2]*wm1);
-	rhs[i][j][k][3] = rhs[i][j][k][3] + dz4tz1 * 
-	  (u[i][j][k+1][3] - 2.0*u[i][j][k][3] + 
+	rhs[i][j][k][3] = rhs[i][j][k][3] + dz4tz1 *
+	  (u[i][j][k+1][3] - 2.0*u[i][j][k][3] +
 	   u[i][j][k-1][3]) +
 	  zzcon2*con43 * (wp1 - 2.0*wijk + wm1) -
-	  tz2 * (u[i][j][k+1][3]*wp1 - 
+	  tz2 * (u[i][j][k+1][3]*wp1 -
 		 u[i][j][k-1][3]*wm1 +
-		 (u[i][j][k+1][4] - square[i][j][k+1] - 
+		 (u[i][j][k+1][4] - square[i][j][k+1] -
 		  u[i][j][k-1][4] + square[i][j][k-1])
 		 *c2);
-	rhs[i][j][k][4] = rhs[i][j][k][4] + dz5tz1 * 
-	  (u[i][j][k+1][4] - 2.0*u[i][j][k][4] + 
+	rhs[i][j][k][4] = rhs[i][j][k][4] + dz5tz1 *
+	  (u[i][j][k+1][4] - 2.0*u[i][j][k][4] +
 	   u[i][j][k-1][4]) +
-	  zzcon3 * (qs[i][j][k+1] - 2.0*qs[i][j][k] + 
+	  zzcon3 * (qs[i][j][k+1] - 2.0*qs[i][j][k] +
 		    qs[i][j][k-1]) +
-	  zzcon4 * (wp1*wp1 - 2.0*wijk*wijk + 
+	  zzcon4 * (wp1*wp1 - 2.0*wijk*wijk +
 		    wm1*wm1) +
-	  zzcon5 * (u[i][j][k+1][4]*rho_i[i][j][k+1] - 
+	  zzcon5 * (u[i][j][k+1][4]*rho_i[i][j][k+1] -
 		    2.0*u[i][j][k][4]*rho_i[i][j][k] +
 		    u[i][j][k-1][4]*rho_i[i][j][k-1]) -
-	  tz2 * ( (c1*u[i][j][k+1][4] - 
+	  tz2 * ( (c1*u[i][j][k+1][4] -
 		   c2*square[i][j][k+1])*wp1 -
-		  (c1*u[i][j][k-1][4] - 
+		  (c1*u[i][j][k-1][4] -
 		   c2*square[i][j][k-1])*wm1);
       }
     }
   }
 
 /*--------------------------------------------------------------------
-c     add fourth order zeta-direction dissipation                
+c     add fourth order zeta-direction dissipation
 c-------------------------------------------------------------------*/
   k = 1;
 #pragma omp for nowait
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
       for (m = 0; m < 5; m++) {
-	rhs[i][j][k][m] = rhs[i][j][k][m]- dssp * 
+	rhs[i][j][k][m] = rhs[i][j][k][m]- dssp *
 	  ( 5.0*u[i][j][k][m] - 4.0*u[i][j][k+1][m] +
 	    u[i][j][k+2][m]);
       }
@@ -2136,7 +2138,7 @@ c-------------------------------------------------------------------*/
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
       for (m = 0; m < 5; m++) {
-	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp * 
+	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
 	  (-4.0*u[i][j][k-1][m] + 6.0*u[i][j][k][m] -
 	   4.0*u[i][j][k+1][m] + u[i][j][k+2][m]);
       }
@@ -2148,22 +2150,22 @@ c-------------------------------------------------------------------*/
     for (j = 1; j < grid_points[1]-1; j++) {
       for (k = 3; k < grid_points[2]-3; k++) {
 	for (m = 0; m < 5; m++) {
-	  rhs[i][j][k][m] = rhs[i][j][k][m] - dssp * 
-	    (  u[i][j][k-2][m] - 4.0*u[i][j][k-1][m] + 
-	       6.0*u[i][j][k][m] - 4.0*u[i][j][k+1][m] + 
+	  rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
+	    (  u[i][j][k-2][m] - 4.0*u[i][j][k-1][m] +
+	       6.0*u[i][j][k][m] - 4.0*u[i][j][k+1][m] +
 	       u[i][j][k+2][m] );
 	}
       }
     }
   }
-         
+
   k = grid_points[2]-3;
 #pragma omp for nowait
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
       for (m = 0; m < 5; m++) {
 	rhs[i][j][k][m] = rhs[i][j][k][m] - dssp *
-	  ( u[i][j][k-2][m] - 4.0*u[i][j][k-1][m] + 
+	  ( u[i][j][k-2][m] - 4.0*u[i][j][k-1][m] +
 	    6.0*u[i][j][k][m] - 4.0*u[i][j][k+1][m] );
       }
     }
@@ -2214,7 +2216,7 @@ static void set_constants(void) {
   ce[0][10] = 0.5;
   ce[0][11] = 0.4;
   ce[0][12] = 0.3;
-      
+
   ce[1][0]  = 1.0;
   ce[1][1]  = 0.0;
   ce[1][2]  = 0.0;
@@ -2295,7 +2297,7 @@ static void set_constants(void) {
   ty1 = 1.0 / (dnym1 * dnym1);
   ty2 = 1.0 / (2.0 * dnym1);
   ty3 = 1.0 / dnym1;
-      
+
   tz1 = 1.0 / (dnzm1 * dnzm1);
   tz2 = 1.0 / (2.0 * dnzm1);
   tz3 = 1.0 / dnzm1;
@@ -2354,13 +2356,13 @@ static void set_constants(void) {
   dx3tx1 = dx3*tx1;
   dx4tx1 = dx4*tx1;
   dx5tx1 = dx5*tx1;
-      
+
   dy1ty1 = dy1*ty1;
   dy2ty1 = dy2*ty1;
   dy3ty1 = dy3*ty1;
   dy4ty1 = dy4*ty1;
   dy5ty1 = dy5*ty1;
-  
+
   dz1tz1 = dz1*tz1;
   dz2tz1 = dz2*tz1;
   dz3tz1 = dz3*tz1;
@@ -2370,7 +2372,7 @@ static void set_constants(void) {
   c2iv  = 2.5;
   con43 = 4.0/3.0;
   con16 = 1.0/6.0;
-      
+
   xxcon1 = c3c4tx3*con43*tx3;
   xxcon2 = c3c4tx3*tx3;
   xxcon3 = c3c4tx3*conz1*tx3;
@@ -2399,10 +2401,10 @@ static void verify(int no_time_steps, char *class, boolean *verified) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c  verification routine                         
+c  verification routine
 c-------------------------------------------------------------------*/
 
-  double xcrref[5],xceref[5],xcrdif[5],xcedif[5], 
+  double xcrref[5],xceref[5],xcrdif[5],xcedif[5],
     epsilon, xce[5], xcr[5], dtref;
   int m;
 
@@ -2583,7 +2585,7 @@ c-------------------------------------------------------------------*/
     }
 
 /*--------------------------------------------------------------------
-c    verification test for residuals if gridsize is either 12X12X12 or 
+c    verification test for residuals if gridsize is either 12X12X12 or
 c    64X64X64 or 102X102X102 or 162X162X162
 c-------------------------------------------------------------------*/
 
@@ -2591,10 +2593,10 @@ c-------------------------------------------------------------------*/
 c    Compute the difference of solution values and the known reference values.
 c-------------------------------------------------------------------*/
   for (m = 0; m < 5; m++) {
-           
+
     xcrdif[m] = fabs((xcr[m]-xcrref[m])/xcrref[m]);
     xcedif[m] = fabs((xce[m]-xceref[m])/xceref[m]);
-           
+
   }
 
 /*--------------------------------------------------------------------
@@ -2636,7 +2638,7 @@ c-------------------------------------------------------------------*/
   } else {
     printf(" RMS-norms of solution error\n");
   }
-        
+
   for (m = 0; m < 5; m++) {
     if (*class == 'U') {
       printf("          %2d%20.13e\n", m, xce[m]);
@@ -2669,23 +2671,23 @@ static void x_solve(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c     
+c
 c     Performs line solves in X direction by first factoring
-c     the block-tridiagonal matrix into an upper triangular matrix, 
+c     the block-tridiagonal matrix into an upper triangular matrix,
 c     and then performing back substitution to solve for the unknow
-c     vectors of each line.  
-c     
+c     vectors of each line.
+c
 c     Make sure we treat elements zero to cell_size in the direction
 c     of the sweep.
-c     
+c
 c-------------------------------------------------------------------*/
 
   lhsx();
   x_solve_cell();
   x_backsubstitute();
 }
-      
-      
+
+
 /*--------------------------------------------------------------------
 --------------------------------------------------------------------*/
 
@@ -2725,10 +2727,10 @@ static void x_solve_cell(void) {
 
 /*--------------------------------------------------------------------
 c     performs guaussian elimination on this cell.
-c     
-c     assumes that unpacking routines for non-first cells 
+c
+c     assumes that unpacking routines for non-first cells
 c     preload C' and rhs' from previous cell.
-c     
+c
 c     assumed send happens outside this routine, but that
 c     c'(IMAX) and rhs'(IMAX) will be sent to next cell
 c-------------------------------------------------------------------*/
@@ -2756,7 +2758,7 @@ c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
 c     begin inner most do loop
-c     do all the elements of the cell unless last 
+c     do all the elements of the cell unless last
 c-------------------------------------------------------------------*/
   for (i = 1; i < isize; i++) {
 #pragma omp for
@@ -2832,7 +2834,7 @@ c-------------------------------------------------------------------*/
 
   for (i = 0; i < 5; i++) {
 /*--------------------------------------------------------------------
-c            rhs(i,ic,jc,kc,ccell) = rhs(i,ic,jc,kc,ccell) 
+c            rhs(i,ic,jc,kc,ccell) = rhs(i,ic,jc,kc,ccell)
 c     $           - lhs[i,1,ablock,ia,ja,ka,acell)*
 c-------------------------------------------------------------------*/
     bvec[i] = bvec[i] - ablock[i][0]*avec[0]
@@ -2898,7 +2900,7 @@ static void binvcrhs(double lhs[5][5], double c[5][5], double r[5]) {
   double pivot, coeff;
 
 /*--------------------------------------------------------------------
-c     
+c
 c-------------------------------------------------------------------*/
 
   pivot = 1.00/lhs[0][0];
@@ -3167,7 +3169,7 @@ static void binvrhs( double lhs[5][5], double r[5] ) {
   double pivot, coeff;
 
 /*--------------------------------------------------------------------
-c     
+c
 c-------------------------------------------------------------------*/
 
   pivot = 1.00/lhs[0][0];
@@ -3311,10 +3313,10 @@ static void y_solve(void) {
 
 /*--------------------------------------------------------------------
 c     Performs line solves in Y direction by first factoring
-c     the block-tridiagonal matrix into an upper triangular matrix][ 
+c     the block-tridiagonal matrix into an upper triangular matrix][
 c     and then performing back substitution to solve for the unknow
-c     vectors of each line.  
-c     
+c     vectors of each line.
+c
 c     Make sure we treat elements zero to cell_size in the direction
 c     of the sweep.
 c-------------------------------------------------------------------*/
@@ -3341,14 +3343,14 @@ c     after call u(jstart) will be sent to next cell
 c-------------------------------------------------------------------*/
 
   int i, j, k, m, n;
-      
+
   for (j = grid_points[1]-2; j >= 0; j--) {
 #pragma omp for
     for (i = 1; i < grid_points[0]-1; i++) {
       for (k = 1; k < grid_points[2]-1; k++) {
 	for (m = 0; m < BLOCK_SIZE; m++) {
 	  for (n = 0; n < BLOCK_SIZE; n++) {
-	    rhs[i][j][k][m] = rhs[i][j][k][m] 
+	    rhs[i][j][k][m] = rhs[i][j][k][m]
 	      - lhs[i][j][k][CC][m][n]*rhs[i][j+1][k][n];
 	  }
 	}
@@ -3367,10 +3369,10 @@ static void y_solve_cell(void) {
 
 /*--------------------------------------------------------------------
 c     performs guaussian elimination on this cell.
-c     
-c     assumes that unpacking routines for non-first cells 
+c
+c     assumes that unpacking routines for non-first cells
 c     preload C' and rhs' from previous cell.
-c     
+c
 c     assumed send happens outside this routine, but that
 c     c'(JMAX) and rhs'(JMAX) will be sent to next cell
 c-------------------------------------------------------------------*/
@@ -3379,7 +3381,7 @@ c-------------------------------------------------------------------*/
 
   jsize = grid_points[1]-1;
 
-#pragma omp for  
+#pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     for (k = 1; k < grid_points[2]-1; k++) {
 
@@ -3395,7 +3397,7 @@ c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
 c     begin inner most do loop
-c     do all the elements of the cell unless last 
+c     do all the elements of the cell unless last
 c-------------------------------------------------------------------*/
   for (j = 1; j < jsize; j++) {
 #pragma omp for
@@ -3404,7 +3406,7 @@ c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
 c     subtract A*lhs_vector(j-1) from lhs_vector(j)
-c     
+c
 c     rhs(j) = rhs(j) - A*rhs(j-1)
 c-------------------------------------------------------------------*/
 	matvec_sub(lhs[i][j][k][AA],
@@ -3429,7 +3431,7 @@ c-------------------------------------------------------------------*/
     }
   }
 
-#pragma omp for  
+#pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     for (k = 1; k < grid_points[2]-1; k++) {
 
@@ -3457,7 +3459,7 @@ c-------------------------------------------------------------------*/
     }
   }
 }
-      
+
 
 /*--------------------------------------------------------------------
 --------------------------------------------------------------------*/
@@ -3469,10 +3471,10 @@ static void z_solve(void) {
 
 /*--------------------------------------------------------------------
 c     Performs line solves in Z direction by first factoring
-c     the block-tridiagonal matrix into an upper triangular matrix, 
+c     the block-tridiagonal matrix into an upper triangular matrix,
 c     and then performing back substitution to solve for the unknow
-c     vectors of each line.  
-c     
+c     vectors of each line.
+c
 c     Make sure we treat elements zero to cell_size in the direction
 c     of the sweep.
 c-------------------------------------------------------------------*/
@@ -3499,13 +3501,13 @@ c-------------------------------------------------------------------*/
 
   int i, j, k, m, n;
 
-#pragma omp for  
+#pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
       for (k = grid_points[2]-2; k >= 0; k--) {
 	for (m = 0; m < BLOCK_SIZE; m++) {
 	  for (n = 0; n < BLOCK_SIZE; n++) {
-	    rhs[i][j][k][m] = rhs[i][j][k][m] 
+	    rhs[i][j][k][m] = rhs[i][j][k][m]
 	      - lhs[i][j][k][CC][m][n]*rhs[i][j][k+1][n];
 	  }
 	}
@@ -3524,10 +3526,10 @@ static void z_solve_cell(void) {
 
 /*--------------------------------------------------------------------
 c     performs guaussian elimination on this cell.
-c     
-c     assumes that unpacking routines for non-first cells 
+c
+c     assumes that unpacking routines for non-first cells
 c     preload C' and rhs' from previous cell.
-c     
+c
 c     assumed send happens outside this routine, but that
 c     c'(KMAX) and rhs'(KMAX) will be sent to next cell.
 c-------------------------------------------------------------------*/
@@ -3539,7 +3541,7 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c     outer most do loops - sweeping in i direction
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
 
@@ -3556,7 +3558,7 @@ c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
 c     begin inner most do loop
-c     do all the elements of the cell unless last 
+c     do all the elements of the cell unless last
 c-------------------------------------------------------------------*/
   for (k = 1; k < ksize; k++) {
 #pragma omp for
@@ -3565,7 +3567,7 @@ c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
 c     subtract A*lhs_vector(k-1) from lhs_vector(k)
-c     
+c
 c     rhs(k) = rhs(k) - A*rhs(k-1)
 c-------------------------------------------------------------------*/
 	matvec_sub(lhs[i][j][k][AA],
@@ -3594,7 +3596,7 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c     Now finish up special cases for last cell
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 1; i < grid_points[0]-1; i++) {
     for (j = 1; j < grid_points[1]-1; j++) {
 

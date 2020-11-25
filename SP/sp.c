@@ -1,10 +1,10 @@
 /*--------------------------------------------------------------------
-  
+
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - SP
 
   This benchmark is an OpenMP C version of the NPB SP code.
-  
-  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions 
+
+  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions
   in "NPB 2.3-serial" developed by NAS. 3.0 translation is performed by the UVSQ.
 
   Permission to use, copy, distribute and modify this software for any
@@ -14,9 +14,9 @@
   Information on OpenMP activities at RWCP is available at:
 
            http://pdplab.trc.rwcp.or.jp/pdperf/Omni/
-  
+
   Information on NAS Parallel Benchmarks 2.3 is available at:
-  
+
            http://www.nas.nasa.gov/NAS/NPB/
 
 --------------------------------------------------------------------*/
@@ -26,9 +26,9 @@
           W. Saphir
 
   OpenMP C version: S. Satoh
- 
-  3.0 structure translation: M. Popov 
-  
+
+  3.0 structure translation: M. Popov
+
 --------------------------------------------------------------------*/
 
 #include "npb-C.h"
@@ -64,13 +64,15 @@ static void z_solve(void);
        program SP
 c-------------------------------------------------------------------*/
 int main(int argc, char **argv) {
-    
+
   int niter, step;
   double mflops, tmax;
   int nthreads = 1;
   boolean verified;
   char class;
   FILE *fp;
+
+  omp_set_num_threads(1);
 
 /*--------------------------------------------------------------------
 c      Read input file (if it exists), else take
@@ -103,7 +105,7 @@ c-------------------------------------------------------------------*/
   printf(" Size: %3dx%3dx%3d\n",
 	 grid_points[0], grid_points[1], grid_points[2]);
   printf(" Iterations: %3d   dt: %10.6f\n", niter, dt);
-  
+
   if ( (grid_points[0] > IMAX) ||
        (grid_points[1] > JMAX) ||
        (grid_points[2] > KMAX) ) {
@@ -119,7 +121,7 @@ c-------------------------------------------------------------------*/
   lhsinit();
 
   exact_rhs();
-  
+
 /*--------------------------------------------------------------------
 c      do one time step to touch all code, and reinitialize
 c-------------------------------------------------------------------*/
@@ -127,7 +129,7 @@ c-------------------------------------------------------------------*/
 
     adi();
 
-  
+
   initialize();
 
   timer_clear(1);
@@ -141,11 +143,11 @@ c-------------------------------------------------------------------*/
     adi();
   }
 #pragma omp parallel
-  {    
+  {
 #if defined(_OPENMP)
 #pragma omp master
   nthreads = omp_get_num_threads();
-#endif /* _OPENMP */  
+#endif /* _OPENMP */
   } /* end parallel */
 
   timer_stop(1);
@@ -161,11 +163,11 @@ c-------------------------------------------------------------------*/
   } else {
     mflops = 0.0;
   }
-  
+
   c_print_results("SP", class, grid_points[0],
 		  grid_points[1], grid_points[2], niter, nthreads,
-		  tmax, mflops, "          floating point", 
-		  verified, NPBVERSION, COMPILETIME, CS1, CS2, CS3, CS4, CS5, 
+		  tmax, mflops, "          floating point",
+		  verified, NPBVERSION, COMPILETIME, CS1, CS2, CS3, CS4, CS5,
 		  CS6, "(none)");
 }
 
@@ -307,7 +309,7 @@ c-------------------------------------------------------------------*/
   int m, i, j, k, ip1, im1, jp1, jm1, km1, kp1;
 
 /*--------------------------------------------------------------------
-c      initialize                                  
+c      initialize
 c-------------------------------------------------------------------*/
   for (m = 0; m < 5; m++) {
     for (i = 0; i <= grid_points[0]-1; i++) {
@@ -320,7 +322,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      xi-direction flux differences                      
+c      xi-direction flux differences
 c-------------------------------------------------------------------*/
   for (k = 1; k <= grid_points[2]-2; k++) {
     zeta = (double)k * dnzm1;
@@ -346,7 +348,7 @@ c-------------------------------------------------------------------*/
 	q[i] = 0.5 * (buf[1][i]*ue[1][i] + buf[2][i]*ue[2][i]
 		      + buf[3][i]*ue[3][i]);
       }
- 
+
       for (i = 1; i <= grid_points[0]-2; i++) {
 	im1 = i-1;
 	ip1 = i+1;
@@ -365,7 +367,7 @@ c-------------------------------------------------------------------*/
 	  - tx2 * (ue[2][ip1]*buf[1][ip1]-ue[2][im1]*buf[1][im1])+
 	  xxcon2*(buf[2][ip1]-2.0*buf[2][i]+buf[2][im1])+
 	  dx3tx1*( ue[2][ip1]-2.0*ue[2][i] +ue[2][im1]);
-                  
+
 	forcing[3][i][j][k] = forcing[3][i][j][k]
 	  - tx2*(ue[3][ip1]*buf[1][ip1]-ue[3][im1]*buf[1][im1])+
 	  xxcon2*(buf[3][ip1]-2.0*buf[3][i]+buf[3][im1])+
@@ -382,7 +384,7 @@ c-------------------------------------------------------------------*/
       }
 
 /*--------------------------------------------------------------------
-c            Fourth-order dissipation                         
+c            Fourth-order dissipation
 c-------------------------------------------------------------------*/
       for (m = 0; m < 5; m++) {
 	i = 1;
@@ -415,7 +417,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c  eta-direction flux differences             
+c  eta-direction flux differences
 c-------------------------------------------------------------------*/
   for (k = 1; k <= grid_points[2]-2; k++) {
     zeta = (double)k * dnzm1;
@@ -436,7 +438,7 @@ c-------------------------------------------------------------------*/
 	}
 
 	cuf[j]   = buf[2][j] * buf[2][j];
-	buf[0][j] = cuf[j] + buf[1][j] * buf[1][j] + 
+	buf[0][j] = cuf[j] + buf[1][j] * buf[1][j] +
 	  buf[3][j] * buf[3][j];
 	q[j] = 0.5*(buf[1][j]*ue[1][j] + buf[2][j]*ue[2][j] +
 		    buf[3][j]*ue[3][j]);
@@ -445,7 +447,7 @@ c-------------------------------------------------------------------*/
       for (j = 1; j <= grid_points[1]-2; j++) {
 	jm1 = j-1;
 	jp1 = j+1;
-                  
+
 	forcing[0][i][j][k] = forcing[0][i][j][k] -
 	  ty2*( ue[2][jp1]-ue[2][jm1] )+
 	  dy1ty1*(ue[0][jp1]-2.0*ue[0][j]+ue[0][jm1]);
@@ -477,7 +479,7 @@ c-------------------------------------------------------------------*/
       }
 
 /*--------------------------------------------------------------------
-c            Fourth-order dissipation                      
+c            Fourth-order dissipation
 c-------------------------------------------------------------------*/
       for (m = 0; m < 5; m++) {
 	j = 1;
@@ -511,7 +513,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      zeta-direction flux differences                      
+c      zeta-direction flux differences
 c-------------------------------------------------------------------*/
   for (j = 1; j <= grid_points[1]-2; j++) {
     eta = (double)j * dnym1;
@@ -533,7 +535,7 @@ c-------------------------------------------------------------------*/
 	}
 
 	cuf[k] = buf[3][k] * buf[3][k];
-	buf[0][k] = cuf[k] + buf[1][k] * buf[1][k] + 
+	buf[0][k] = cuf[k] + buf[1][k] * buf[1][k] +
 	  buf[2][k] * buf[2][k];
 	q[k] = 0.5*(buf[1][k]*ue[1][k] + buf[2][k]*ue[2][k] +
 		    buf[3][k]*ue[3][k]);
@@ -542,7 +544,7 @@ c-------------------------------------------------------------------*/
       for (k = 1; k <= grid_points[2]-2; k++) {
 	km1 = k-1;
 	kp1 = k+1;
-                  
+
 	forcing[0][i][j][k] = forcing[0][i][j][k] -
 	  tz2*( ue[3][kp1]-ue[3][km1] )+
 	  dz1tz1*(ue[0][kp1]-2.0*ue[0][k]+ue[0][km1]);
@@ -574,7 +576,7 @@ c-------------------------------------------------------------------*/
       }
 
 /*--------------------------------------------------------------------
-c            Fourth-order dissipation                        
+c            Fourth-order dissipation
 c-------------------------------------------------------------------*/
       for (m = 0; m < 5; m++) {
 	k = 1;
@@ -607,7 +609,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c now change the sign of the forcing function, 
+c now change the sign of the forcing function,
 c-------------------------------------------------------------------*/
   for (m = 0; m < 5; m++) {
     for (i = 1; i <= grid_points[0]-2; i++) {
@@ -630,19 +632,19 @@ static void exact_solution(double xi, double eta, double zeta,
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c this function returns the exact solution at point xi, eta, zeta  
+c this function returns the exact solution at point xi, eta, zeta
 c-------------------------------------------------------------------*/
 
   int m;
 
   for (m = 0; m < 5; m++) {
     dtemp[m] =  ce[0][m] +
-      xi*(ce[1][m] + xi*(ce[4][m] + 
+      xi*(ce[1][m] + xi*(ce[4][m] +
 			     xi*(ce[7][m] + xi*ce[10][m]))) +
-      eta*(ce[2][m] + eta*(ce[5][m] + 
+      eta*(ce[2][m] + eta*(ce[5][m] +
 			       eta*(ce[8][m] + eta*ce[11][m])))+
       zeta*(ce[3][m] + zeta*(ce[6][m] +
-				 zeta*(ce[9][m] + 
+				 zeta*(ce[9][m] +
 				       zeta*ce[12][m])));
   }
 }
@@ -656,18 +658,18 @@ static void initialize(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c This subroutine initializes the field variable u using 
-c tri-linear transfinite interpolation of the boundary values     
+c This subroutine initializes the field variable u using
+c tri-linear transfinite interpolation of the boundary values
 c-------------------------------------------------------------------*/
 
   int i, j, k, m, ix, iy, iz;
   double xi, eta, zeta, Pface[2][3][5], Pxi, Peta, Pzeta, temp[5];
 
 /*--------------------------------------------------------------------
-c  Later (in compute_rhs) we compute 1/u for every element. A few of 
-c  the corner elements are not used, but it convenient (and faster) 
-c  to compute the whole thing with a simple loop. Make sure those 
-c  values are nonzero by initializing the whole thing here. 
+c  Later (in compute_rhs) we compute 1/u for every element. A few of
+c  the corner elements are not used, but it convenient (and faster)
+c  to compute the whole thing with a simple loop. Make sure those
+c  values are nonzero by initializing the whole thing here.
 c-------------------------------------------------------------------*/
 
   for (i = 0; i <= IMAX-1; i++) {
@@ -683,7 +685,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c first store the "interpolated" values everywhere on the grid    
+c first store the "interpolated" values everywhere on the grid
 c-------------------------------------------------------------------*/
 
   for (i = 0; i <= grid_points[0]-1; i++) {
@@ -692,32 +694,32 @@ c-------------------------------------------------------------------*/
       eta = (double)j * dnym1;
       for (k = 0; k <= grid_points[2]-1; k++) {
 	zeta = (double)k * dnzm1;
-                  
+
 	for (ix = 0; ix < 2; ix++) {
-	  exact_solution((double)ix, eta, zeta, 
+	  exact_solution((double)ix, eta, zeta,
 			 &Pface[ix][0][0]);
 	}
 
 	for (iy = 0; iy < 2; iy++) {
-	  exact_solution(xi, (double)iy , zeta, 
+	  exact_solution(xi, (double)iy , zeta,
 			 &Pface[iy][1][0]);
 	}
 
 	for (iz = 0; iz < 2; iz++) {
-	  exact_solution(xi, eta, (double)iz,   
+	  exact_solution(xi, eta, (double)iz,
 			 &Pface[iz][2][0]);
 	}
 
 	for (m = 0; m < 5; m++) {
-	  Pxi   = xi   * Pface[1][0][m] + 
+	  Pxi   = xi   * Pface[1][0][m] +
 	    (1.0-xi)   * Pface[0][0][m];
-	  Peta  = eta  * Pface[1][1][m] + 
+	  Peta  = eta  * Pface[1][1][m] +
 	    (1.0-eta)  * Pface[0][1][m];
-	  Pzeta = zeta * Pface[1][2][m] + 
+	  Pzeta = zeta * Pface[1][2][m] +
 	    (1.0-zeta) * Pface[0][2][m];
- 
-	  u[m][i][j][k] = Pxi + Peta + Pzeta - 
-	    Pxi*Peta - Pxi*Pzeta - Peta*Pzeta + 
+
+	  u[m][i][j][k] = Pxi + Peta + Pzeta -
+	    Pxi*Peta - Pxi*Pzeta - Peta*Pzeta +
 	    Pxi*Peta*Pzeta;
 
 	}
@@ -726,11 +728,11 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c now store the exact values on the boundaries        
+c now store the exact values on the boundaries
 c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c west face                                                  
+c west face
 c-------------------------------------------------------------------*/
 
   xi = 0.0;
@@ -747,7 +749,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c east face                                                      
+c east face
 c-------------------------------------------------------------------*/
 
   xi = 1.0;
@@ -764,7 +766,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c south face                                                 
+c south face
 c-------------------------------------------------------------------*/
 
   eta = 0.0;
@@ -781,7 +783,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c north face                                    
+c north face
 c-------------------------------------------------------------------*/
 
   eta = 1.0;
@@ -798,7 +800,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c bottom face                                       
+c bottom face
 c-------------------------------------------------------------------*/
 
   zeta = 0.0;
@@ -815,7 +817,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c top face     
+c top face
 c-------------------------------------------------------------------*/
 
   zeta = 1.0;
@@ -856,14 +858,14 @@ c-------------------------------------------------------------------*/
       }
     }
   }
-#pragma omp barrier  
+#pragma omp barrier
 
 /*--------------------------------------------------------------------
-c      next, set all diagonal values to 1. This is overkill, but 
+c      next, set all diagonal values to 1. This is overkill, but
 c      convenient
 c-------------------------------------------------------------------*/
   for (n = 0; n < 3; n++) {
-#pragma omp for    
+#pragma omp for
     for (i = 0; i < grid_points[0]; i++) {
       for (j = 0; j < grid_points[1]; j++) {
 	for (k = 0; k < grid_points[2]; k++) {
@@ -873,7 +875,7 @@ c-------------------------------------------------------------------*/
     }
   }
 }
-	 
+
 /*--------------------------------------------------------------------
 --------------------------------------------------------------------*/
 
@@ -883,28 +885,28 @@ static void lhsx(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c This function computes the left hand side for the three x-factors  
+c This function computes the left hand side for the three x-factors
 c-------------------------------------------------------------------*/
 
   double ru1;
   int i, j, k;
 
 /*--------------------------------------------------------------------
-c      first fill the lhs for the u-eigenvalue                   
+c      first fill the lhs for the u-eigenvalue
 c-------------------------------------------------------------------*/
   for (j = 1; j <= grid_points[1]-2; j++) {
     for (k = 1; k <= grid_points[2]-2; k++) {
-#pragma omp for  
+#pragma omp for
       for (i = 0; i <= grid_points[0]-1; i++) {
 	ru1 = c3c4*rho_i[i][j][k];
 	cv[i] = us[i][j][k];
-	rhon[i] = max(dx2+con43*ru1, 
+	rhon[i] = max(dx2+con43*ru1,
 		      max(dx5+c1c5*ru1,
 			  max(dxmax+ru1,
 			      dx1)));
       }
 
-#pragma omp for  
+#pragma omp for
       for (i = 1; i <= grid_points[0]-2; i++) {
 	lhs[0][i][j][k] =   0.0;
 	lhs[1][i][j][k] = - dttx2 * cv[i-1] - dttx1 * rhon[i-1];
@@ -916,7 +918,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      add fourth order dissipation                             
+c      add fourth order dissipation
 c-------------------------------------------------------------------*/
 
   i = 1;
@@ -947,7 +949,7 @@ c-------------------------------------------------------------------*/
   }
 
   i = grid_points[0]-3;
-#pragma omp for  
+#pragma omp for
   for (j = 1; j <= grid_points[1]-2; j++) {
     for (k = 1; k <= grid_points[2]-2; k++) {
       lhs[0][i][j][k] = lhs[0][i][j][k] + comz1;
@@ -962,25 +964,25 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      subsequently, fill the other factors (u+c), (u-c) by adding to 
-c      the first  
+c      subsequently, fill the other factors (u+c), (u-c) by adding to
+c      the first
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	lhs[0+5][i][j][k]  = lhs[0][i][j][k];
-	lhs[1+5][i][j][k]  = lhs[1][i][j][k] - 
+	lhs[1+5][i][j][k]  = lhs[1][i][j][k] -
 	  dttx2 * speed[i-1][j][k];
 	lhs[2+5][i][j][k]  = lhs[2][i][j][k];
-	lhs[3+5][i][j][k]  = lhs[3][i][j][k] + 
+	lhs[3+5][i][j][k]  = lhs[3][i][j][k] +
 	  dttx2 * speed[i+1][j][k];
 	lhs[4+5][i][j][k]  = lhs[4][i][j][k];
 	lhs[0+10][i][j][k] = lhs[0][i][j][k];
-	lhs[1+10][i][j][k] = lhs[1][i][j][k] + 
+	lhs[1+10][i][j][k] = lhs[1][i][j][k] +
 	  dttx2 * speed[i-1][j][k];
 	lhs[2+10][i][j][k] = lhs[2][i][j][k];
-	lhs[3+10][i][j][k] = lhs[3][i][j][k] - 
+	lhs[3+10][i][j][k] = lhs[3][i][j][k] -
 	  dttx2 * speed[i+1][j][k];
 	lhs[4+10][i][j][k] = lhs[4][i][j][k];
       }
@@ -997,18 +999,18 @@ static void lhsy(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c This function computes the left hand side for the three y-factors   
+c This function computes the left hand side for the three y-factors
 c-------------------------------------------------------------------*/
 
   double ru1;
   int i, j, k;
 
 /*--------------------------------------------------------------------
-c      first fill the lhs for the u-eigenvalue         
+c      first fill the lhs for the u-eigenvalue
 c-------------------------------------------------------------------*/
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (k = 1; k <= grid_points[2]-2; k++) {
-#pragma omp for  
+#pragma omp for
       for (j = 0; j <= grid_points[1]-1; j++) {
 	ru1 = c3c4*rho_i[i][j][k];
 	cv[j] = vs[i][j][k];
@@ -1017,8 +1019,8 @@ c-------------------------------------------------------------------*/
 			  max(dymax + ru1,
 			      dy1)));
       }
-            
-#pragma omp for  
+
+#pragma omp for
       for (j = 1; j <= grid_points[1]-2; j++) {
 	lhs[0][i][j][k] =  0.0;
 	lhs[1][i][j][k] = -dtty2 * cv[j-1] - dtty1 * rhoq[j-1];
@@ -1030,7 +1032,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      add fourth order dissipation                             
+c      add fourth order dissipation
 c-------------------------------------------------------------------*/
 
   j = 1;
@@ -1041,7 +1043,7 @@ c-------------------------------------------------------------------*/
       lhs[2][i][j][k] = lhs[2][i][j][k] + comz5;
       lhs[3][i][j][k] = lhs[3][i][j][k] - comz4;
       lhs[4][i][j][k] = lhs[4][i][j][k] + comz1;
-       
+
       lhs[1][i][j+1][k] = lhs[1][i][j+1][k] - comz4;
       lhs[2][i][j+1][k] = lhs[2][i][j+1][k] + comz6;
       lhs[3][i][j+1][k] = lhs[3][i][j+1][k] - comz4;
@@ -1063,7 +1065,7 @@ c-------------------------------------------------------------------*/
   }
 
   j = grid_points[1]-3;
-#pragma omp for  
+#pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (k = 1; k <= grid_points[2]-2; k++) {
       lhs[0][i][j][k] = lhs[0][i][j][k] + comz1;
@@ -1078,24 +1080,24 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      subsequently, do the other two factors                    
+c      subsequently, do the other two factors
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	lhs[0+5][i][j][k]  = lhs[0][i][j][k];
-	lhs[1+5][i][j][k]  = lhs[1][i][j][k] - 
+	lhs[1+5][i][j][k]  = lhs[1][i][j][k] -
 	  dtty2 * speed[i][j-1][k];
 	lhs[2+5][i][j][k]  = lhs[2][i][j][k];
-	lhs[3+5][i][j][k]  = lhs[3][i][j][k] + 
+	lhs[3+5][i][j][k]  = lhs[3][i][j][k] +
 	  dtty2 * speed[i][j+1][k];
 	lhs[4+5][i][j][k] = lhs[4][i][j][k];
 	lhs[0+10][i][j][k] = lhs[0][i][j][k];
-	lhs[1+10][i][j][k] = lhs[1][i][j][k] + 
+	lhs[1+10][i][j][k] = lhs[1][i][j][k] +
 	  dtty2 * speed[i][j-1][k];
 	lhs[2+10][i][j][k] = lhs[2][i][j][k];
-	lhs[3+10][i][j][k] = lhs[3][i][j][k] - 
+	lhs[3+10][i][j][k] = lhs[3][i][j][k] -
 	  dtty2 * speed[i][j+1][k];
 	lhs[4+10][i][j][k] = lhs[4][i][j][k];
       }
@@ -1112,18 +1114,18 @@ static void lhsz(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c This function computes the left hand side for the three z-factors   
+c This function computes the left hand side for the three z-factors
 c-------------------------------------------------------------------*/
 
   double ru1;
   int i, j, k;
 
 /*--------------------------------------------------------------------
-c first fill the lhs for the u-eigenvalue                          
+c first fill the lhs for the u-eigenvalue
 c-------------------------------------------------------------------*/
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (j = 1; j <= grid_points[1]-2; j++) {
-#pragma omp for  
+#pragma omp for
       for (k = 0; k <= grid_points[2]-1; k++) {
 	ru1 = c3c4*rho_i[i][j][k];
 	cv[k] = ws[i][j][k];
@@ -1133,7 +1135,7 @@ c-------------------------------------------------------------------*/
 			      dz1)));
       }
 
-#pragma omp for  
+#pragma omp for
       for (k = 1; k <= grid_points[2]-2; k++) {
 	lhs[0][i][j][k] =  0.0;
 	lhs[1][i][j][k] = -dttz2 * cv[k-1] - dttz1 * rhos[k-1];
@@ -1145,7 +1147,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      add fourth order dissipation                                  
+c      add fourth order dissipation
 c-------------------------------------------------------------------*/
 
   k = 1;
@@ -1177,7 +1179,7 @@ c-------------------------------------------------------------------*/
   }
 
   k = grid_points[2]-3;
-#pragma omp for  
+#pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (j = 1; j <= grid_points[1]-2; j++) {
       lhs[0][i][j][k] = lhs[0][i][j][k] + comz1;
@@ -1192,24 +1194,24 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      subsequently, fill the other factors (u+c), (u-c) 
+c      subsequently, fill the other factors (u+c), (u-c)
 c-------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	lhs[0+5][i][j][k]  = lhs[0][i][j][k];
-	lhs[1+5][i][j][k]  = lhs[1][i][j][k] - 
+	lhs[1+5][i][j][k]  = lhs[1][i][j][k] -
 	  dttz2 * speed[i][j][k-1];
 	lhs[2+5][i][j][k]  = lhs[2][i][j][k];
-	lhs[3+5][i][j][k]  = lhs[3][i][j][k] + 
+	lhs[3+5][i][j][k]  = lhs[3][i][j][k] +
 	  dttz2 * speed[i][j][k+1];
 	lhs[4+5][i][j][k]  = lhs[4][i][j][k];
 	lhs[0+10][i][j][k] = lhs[0][i][j][k];
-	lhs[1+10][i][j][k] = lhs[1][i][j][k] + 
+	lhs[1+10][i][j][k] = lhs[1][i][j][k] +
 	  dttz2 * speed[i][j][k-1];
 	lhs[2+10][i][j][k] = lhs[2][i][j][k];
-	lhs[3+10][i][j][k] = lhs[3][i][j][k] - 
+	lhs[3+10][i][j][k] = lhs[3][i][j][k] -
 	  dttz2 * speed[i][j][k+1];
 	lhs[4+10][i][j][k] = lhs[4][i][j][k];
       }
@@ -1226,7 +1228,7 @@ static void ninvr(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c   block-diagonal matrix-vector multiplication              
+c   block-diagonal matrix-vector multiplication
 c-------------------------------------------------------------------*/
 
   int i, j, k;
@@ -1241,7 +1243,7 @@ c-------------------------------------------------------------------*/
 	r3 = rhs[2][i][j][k];
 	r4 = rhs[3][i][j][k];
 	r5 = rhs[4][i][j][k];
-               
+
 	t1 = bt * r3;
 	t2 = 0.5 * ( r4 + r5 );
 
@@ -1264,7 +1266,7 @@ static void pinvr(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c   block-diagonal matrix-vector multiplication                       
+c   block-diagonal matrix-vector multiplication
 c-------------------------------------------------------------------*/
 
   int i, j, k;
@@ -1310,8 +1312,8 @@ static void compute_rhs(void) {
     wijk, wp1, wm1;
 
 /*--------------------------------------------------------------------
-c      compute the reciprocal of density, and the kinetic energy, 
-c      and the speed of sound. 
+c      compute the reciprocal of density, and the kinetic energy,
+c      and the speed of sound.
 c-------------------------------------------------------------------*/
 
 #pragma omp for nowait
@@ -1323,7 +1325,7 @@ c-------------------------------------------------------------------*/
 	us[i][j][k] = u[1][i][j][k] * rho_inv;
 	vs[i][j][k] = u[2][i][j][k] * rho_inv;
 	ws[i][j][k] = u[3][i][j][k] * rho_inv;
-	square[i][j][k] = 0.5* (u[1][i][j][k]*u[1][i][j][k] + 
+	square[i][j][k] = 0.5* (u[1][i][j][k]*u[1][i][j][k] +
 				u[2][i][j][k]*u[2][i][j][k] +
 				u[3][i][j][k]*u[3][i][j][k] ) * rho_inv;
 	qs[i][j][k] = square[i][j][k] * rho_inv;
@@ -1339,9 +1341,9 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c copy the exact forcing term to the right hand side;  because 
+c copy the exact forcing term to the right hand side;  because
 c this forcing term is known, we can store it on the whole grid
-c including the boundary                   
+c including the boundary
 c-------------------------------------------------------------------*/
 
   for (m = 0; m < 5; m++) {
@@ -1356,7 +1358,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      compute xi-direction fluxes 
+c      compute xi-direction fluxes
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
@@ -1366,56 +1368,56 @@ c-------------------------------------------------------------------*/
 	up1  = us[i+1][j][k];
 	um1  = us[i-1][j][k];
 
-	rhs[0][i][j][k] = rhs[0][i][j][k] + dx1tx1 * 
-	  (u[0][i+1][j][k] - 2.0*u[0][i][j][k] + 
+	rhs[0][i][j][k] = rhs[0][i][j][k] + dx1tx1 *
+	  (u[0][i+1][j][k] - 2.0*u[0][i][j][k] +
 	   u[0][i-1][j][k]) -
 	  tx2 * (u[1][i+1][j][k] - u[1][i-1][j][k]);
-	rhs[1][i][j][k] = rhs[1][i][j][k] + dx2tx1 * 
-	  (u[1][i+1][j][k] - 2.0*u[1][i][j][k] + 
+	rhs[1][i][j][k] = rhs[1][i][j][k] + dx2tx1 *
+	  (u[1][i+1][j][k] - 2.0*u[1][i][j][k] +
 	   u[1][i-1][j][k]) +
 	  xxcon2*con43 * (up1 - 2.0*uijk + um1) -
-	  tx2 * (u[1][i+1][j][k]*up1 - 
+	  tx2 * (u[1][i+1][j][k]*up1 -
 		 u[1][i-1][j][k]*um1 +
 		 (u[4][i+1][j][k]- square[i+1][j][k]-
 		  u[4][i-1][j][k]+ square[i-1][j][k])*
 		 c2);
 
-	rhs[2][i][j][k] = rhs[2][i][j][k] + dx3tx1 * 
+	rhs[2][i][j][k] = rhs[2][i][j][k] + dx3tx1 *
 	  (u[2][i+1][j][k] - 2.0*u[2][i][j][k] +
 	   u[2][i-1][j][k]) +
 	  xxcon2 * (vs[i+1][j][k] - 2.0*vs[i][j][k] +
 		    vs[i-1][j][k]) -
-	  tx2 * (u[2][i+1][j][k]*up1 - 
+	  tx2 * (u[2][i+1][j][k]*up1 -
 		 u[2][i-1][j][k]*um1);
 
-	rhs[3][i][j][k] = rhs[3][i][j][k] + dx4tx1 * 
+	rhs[3][i][j][k] = rhs[3][i][j][k] + dx4tx1 *
 	  (u[3][i+1][j][k] - 2.0*u[3][i][j][k] +
 	   u[3][i-1][j][k]) +
 	  xxcon2 * (ws[i+1][j][k] - 2.0*ws[i][j][k] +
 		    ws[i-1][j][k]) -
-	  tx2 * (u[3][i+1][j][k]*up1 - 
+	  tx2 * (u[3][i+1][j][k]*up1 -
 		 u[3][i-1][j][k]*um1);
 
-	rhs[4][i][j][k] = rhs[4][i][j][k] + dx5tx1 * 
+	rhs[4][i][j][k] = rhs[4][i][j][k] + dx5tx1 *
 	  (u[4][i+1][j][k] - 2.0*u[4][i][j][k] +
 	   u[4][i-1][j][k]) +
 	  xxcon3 * (qs[i+1][j][k] - 2.0*qs[i][j][k] +
 		    qs[i-1][j][k]) +
-	  xxcon4 * (up1*up1 -       2.0*uijk*uijk + 
+	  xxcon4 * (up1*up1 -       2.0*uijk*uijk +
 		    um1*um1) +
-	  xxcon5 * (u[4][i+1][j][k]*rho_i[i+1][j][k] - 
+	  xxcon5 * (u[4][i+1][j][k]*rho_i[i+1][j][k] -
 		    2.0*u[4][i][j][k]*rho_i[i][j][k] +
 		    u[4][i-1][j][k]*rho_i[i-1][j][k]) -
-	  tx2 * ( (c1*u[4][i+1][j][k] - 
+	  tx2 * ( (c1*u[4][i+1][j][k] -
 		   c2*square[i+1][j][k])*up1 -
-		  (c1*u[4][i-1][j][k] - 
+		  (c1*u[4][i-1][j][k] -
 		   c2*square[i-1][j][k])*um1 );
       }
     }
   }
 
 /*--------------------------------------------------------------------
-c      add fourth order xi-direction dissipation               
+c      add fourth order xi-direction dissipation
 c-------------------------------------------------------------------*/
 
   i = 1;
@@ -1423,7 +1425,7 @@ c-------------------------------------------------------------------*/
 #pragma omp for
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
-	rhs[m][i][j][k] = rhs[m][i][j][k]- dssp * 
+	rhs[m][i][j][k] = rhs[m][i][j][k]- dssp *
 	  ( 5.0*u[m][i][j][k] - 4.0*u[m][i+1][j][k] +
 	    u[m][i+2][j][k]);
       }
@@ -1434,7 +1436,7 @@ c-------------------------------------------------------------------*/
 #pragma omp for
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
-	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp * 
+	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
 	  (-4.0*u[m][i-1][j][k] + 6.0*u[m][i][j][k] -
 	   4.0*u[m][i+1][j][k] + u[m][i+2][j][k]);
       }
@@ -1446,9 +1448,9 @@ c-------------------------------------------------------------------*/
     for (i = 3*1; i <= grid_points[0]-3*1-1; i++) {
       for (j = 1; j <= grid_points[1]-2; j++) {
 	for (k = 1; k <= grid_points[2]-2; k++) {
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - dssp * 
-	    (  u[m][i-2][j][k] - 4.0*u[m][i-1][j][k] + 
-	       6.0*u[m][i][j][k] - 4.0*u[m][i+1][j][k] + 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
+	    (  u[m][i-2][j][k] - 4.0*u[m][i-1][j][k] +
+	       6.0*u[m][i][j][k] - 4.0*u[m][i+1][j][k] +
 	       u[m][i+2][j][k] );
 	}
       }
@@ -1461,7 +1463,7 @@ c-------------------------------------------------------------------*/
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
-	  ( u[m][i-2][j][k] - 4.0*u[m][i-1][j][k] + 
+	  ( u[m][i-2][j][k] - 4.0*u[m][i-1][j][k] +
 	    6.0*u[m][i][j][k] - 4.0*u[m][i+1][j][k] );
       }
     }
@@ -1479,9 +1481,9 @@ c-------------------------------------------------------------------*/
     }
   }
 #pragma omp barrier
-  
+
 /*--------------------------------------------------------------------
-c      compute eta-direction fluxes 
+c      compute eta-direction fluxes
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
@@ -1490,53 +1492,53 @@ c-------------------------------------------------------------------*/
 	vijk = vs[i][j][k];
 	vp1  = vs[i][j+1][k];
 	vm1  = vs[i][j-1][k];
-	rhs[0][i][j][k] = rhs[0][i][j][k] + dy1ty1 * 
-	  (u[0][i][j+1][k] - 2.0*u[0][i][j][k] + 
+	rhs[0][i][j][k] = rhs[0][i][j][k] + dy1ty1 *
+	  (u[0][i][j+1][k] - 2.0*u[0][i][j][k] +
 	   u[0][i][j-1][k]) -
 	  ty2 * (u[2][i][j+1][k] - u[2][i][j-1][k]);
-	rhs[1][i][j][k] = rhs[1][i][j][k] + dy2ty1 * 
-	  (u[1][i][j+1][k] - 2.0*u[1][i][j][k] + 
+	rhs[1][i][j][k] = rhs[1][i][j][k] + dy2ty1 *
+	  (u[1][i][j+1][k] - 2.0*u[1][i][j][k] +
 	   u[1][i][j-1][k]) +
-	  yycon2 * (us[i][j+1][k] - 2.0*us[i][j][k] + 
+	  yycon2 * (us[i][j+1][k] - 2.0*us[i][j][k] +
 		    us[i][j-1][k]) -
-	  ty2 * (u[1][i][j+1][k]*vp1 - 
+	  ty2 * (u[1][i][j+1][k]*vp1 -
 		 u[1][i][j-1][k]*vm1);
-	rhs[2][i][j][k] = rhs[2][i][j][k] + dy3ty1 * 
-	  (u[2][i][j+1][k] - 2.0*u[2][i][j][k] + 
+	rhs[2][i][j][k] = rhs[2][i][j][k] + dy3ty1 *
+	  (u[2][i][j+1][k] - 2.0*u[2][i][j][k] +
 	   u[2][i][j-1][k]) +
 	  yycon2*con43 * (vp1 - 2.0*vijk + vm1) -
-	  ty2 * (u[2][i][j+1][k]*vp1 - 
+	  ty2 * (u[2][i][j+1][k]*vp1 -
 		 u[2][i][j-1][k]*vm1 +
-		 (u[4][i][j+1][k] - square[i][j+1][k] - 
+		 (u[4][i][j+1][k] - square[i][j+1][k] -
 		  u[4][i][j-1][k] + square[i][j-1][k])
 		 *c2);
-	rhs[3][i][j][k] = rhs[3][i][j][k] + dy4ty1 * 
-	  (u[3][i][j+1][k] - 2.0*u[3][i][j][k] + 
+	rhs[3][i][j][k] = rhs[3][i][j][k] + dy4ty1 *
+	  (u[3][i][j+1][k] - 2.0*u[3][i][j][k] +
 	   u[3][i][j-1][k]) +
-	  yycon2 * (ws[i][j+1][k] - 2.0*ws[i][j][k] + 
+	  yycon2 * (ws[i][j+1][k] - 2.0*ws[i][j][k] +
 		    ws[i][j-1][k]) -
-	  ty2 * (u[3][i][j+1][k]*vp1 - 
+	  ty2 * (u[3][i][j+1][k]*vp1 -
 		 u[3][i][j-1][k]*vm1);
-	rhs[4][i][j][k] = rhs[4][i][j][k] + dy5ty1 * 
-	  (u[4][i][j+1][k] - 2.0*u[4][i][j][k] + 
+	rhs[4][i][j][k] = rhs[4][i][j][k] + dy5ty1 *
+	  (u[4][i][j+1][k] - 2.0*u[4][i][j][k] +
 	   u[4][i][j-1][k]) +
-	  yycon3 * (qs[i][j+1][k] - 2.0*qs[i][j][k] + 
+	  yycon3 * (qs[i][j+1][k] - 2.0*qs[i][j][k] +
 		    qs[i][j-1][k]) +
-	  yycon4 * (vp1*vp1       - 2.0*vijk*vijk + 
+	  yycon4 * (vp1*vp1       - 2.0*vijk*vijk +
 		    vm1*vm1) +
-	  yycon5 * (u[4][i][j+1][k]*rho_i[i][j+1][k] - 
+	  yycon5 * (u[4][i][j+1][k]*rho_i[i][j+1][k] -
 		    2.0*u[4][i][j][k]*rho_i[i][j][k] +
 		    u[4][i][j-1][k]*rho_i[i][j-1][k]) -
-	  ty2 * ((c1*u[4][i][j+1][k] - 
+	  ty2 * ((c1*u[4][i][j+1][k] -
 		  c2*square[i][j+1][k]) * vp1 -
-		 (c1*u[4][i][j-1][k] - 
+		 (c1*u[4][i][j-1][k] -
 		  c2*square[i][j-1][k]) * vm1);
       }
     }
   }
 
 /*--------------------------------------------------------------------
-c      add fourth order eta-direction dissipation         
+c      add fourth order eta-direction dissipation
 c-------------------------------------------------------------------*/
 
   j = 1;
@@ -1544,7 +1546,7 @@ c-------------------------------------------------------------------*/
 #pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
-	rhs[m][i][j][k] = rhs[m][i][j][k]- dssp * 
+	rhs[m][i][j][k] = rhs[m][i][j][k]- dssp *
 	  ( 5.0*u[m][i][j][k] - 4.0*u[m][i][j+1][k] +
 	    u[m][i][j+2][k]);
       }
@@ -1556,7 +1558,7 @@ c-------------------------------------------------------------------*/
 #pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
-	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp * 
+	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
 	  (-4.0*u[m][i][j-1][k] + 6.0*u[m][i][j][k] -
 	   4.0*u[m][i][j+1][k] + u[m][i][j+2][k]);
       }
@@ -1568,22 +1570,22 @@ c-------------------------------------------------------------------*/
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (j = 3*1; j <= grid_points[1]-3*1-1; j++) {
 	for (k = 1; k <= grid_points[2]-2; k++) {
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - dssp * 
-	    (  u[m][i][j-2][k] - 4.0*u[m][i][j-1][k] + 
-	       6.0*u[m][i][j][k] - 4.0*u[m][i][j+1][k] + 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
+	    (  u[m][i][j-2][k] - 4.0*u[m][i][j-1][k] +
+	       6.0*u[m][i][j][k] - 4.0*u[m][i][j+1][k] +
 	       u[m][i][j+2][k] );
 	}
       }
     }
   }
- 
+
   j = grid_points[1]-3;
   for (m = 0; m < 5; m++) {
 #pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
-	  ( u[m][i][j-2][k] - 4.0*u[m][i][j-1][k] + 
+	  ( u[m][i][j-2][k] - 4.0*u[m][i][j-1][k] +
 	    6.0*u[m][i][j][k] - 4.0*u[m][i][j+1][k] );
       }
     }
@@ -1600,10 +1602,10 @@ c-------------------------------------------------------------------*/
       }
     }
   }
-#pragma omp barrier  
+#pragma omp barrier
 
 /*--------------------------------------------------------------------
-c      compute zeta-direction fluxes 
+c      compute zeta-direction fluxes
 c-------------------------------------------------------------------*/
 #pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
@@ -1613,53 +1615,53 @@ c-------------------------------------------------------------------*/
 	wp1  = ws[i][j][k+1];
 	wm1  = ws[i][j][k-1];
 
-	rhs[0][i][j][k] = rhs[0][i][j][k] + dz1tz1 * 
-	  (u[0][i][j][k+1] - 2.0*u[0][i][j][k] + 
+	rhs[0][i][j][k] = rhs[0][i][j][k] + dz1tz1 *
+	  (u[0][i][j][k+1] - 2.0*u[0][i][j][k] +
 	   u[0][i][j][k-1]) -
 	  tz2 * (u[3][i][j][k+1] - u[3][i][j][k-1]);
-	rhs[1][i][j][k] = rhs[1][i][j][k] + dz2tz1 * 
-	  (u[1][i][j][k+1] - 2.0*u[1][i][j][k] + 
+	rhs[1][i][j][k] = rhs[1][i][j][k] + dz2tz1 *
+	  (u[1][i][j][k+1] - 2.0*u[1][i][j][k] +
 	   u[1][i][j][k-1]) +
-	  zzcon2 * (us[i][j][k+1] - 2.0*us[i][j][k] + 
+	  zzcon2 * (us[i][j][k+1] - 2.0*us[i][j][k] +
 		    us[i][j][k-1]) -
-	  tz2 * (u[1][i][j][k+1]*wp1 - 
+	  tz2 * (u[1][i][j][k+1]*wp1 -
 		 u[1][i][j][k-1]*wm1);
-	rhs[2][i][j][k] = rhs[2][i][j][k] + dz3tz1 * 
-	  (u[2][i][j][k+1] - 2.0*u[2][i][j][k] + 
+	rhs[2][i][j][k] = rhs[2][i][j][k] + dz3tz1 *
+	  (u[2][i][j][k+1] - 2.0*u[2][i][j][k] +
 	   u[2][i][j][k-1]) +
-	  zzcon2 * (vs[i][j][k+1] - 2.0*vs[i][j][k] + 
+	  zzcon2 * (vs[i][j][k+1] - 2.0*vs[i][j][k] +
 		    vs[i][j][k-1]) -
-	  tz2 * (u[2][i][j][k+1]*wp1 - 
+	  tz2 * (u[2][i][j][k+1]*wp1 -
 		 u[2][i][j][k-1]*wm1);
-	rhs[3][i][j][k] = rhs[3][i][j][k] + dz4tz1 * 
-	  (u[3][i][j][k+1] - 2.0*u[3][i][j][k] + 
+	rhs[3][i][j][k] = rhs[3][i][j][k] + dz4tz1 *
+	  (u[3][i][j][k+1] - 2.0*u[3][i][j][k] +
 	   u[3][i][j][k-1]) +
 	  zzcon2*con43 * (wp1 - 2.0*wijk + wm1) -
-	  tz2 * (u[3][i][j][k+1]*wp1 - 
+	  tz2 * (u[3][i][j][k+1]*wp1 -
 		 u[3][i][j][k-1]*wm1 +
-		 (u[4][i][j][k+1] - square[i][j][k+1] - 
+		 (u[4][i][j][k+1] - square[i][j][k+1] -
 		  u[4][i][j][k-1] + square[i][j][k-1])
 		 *c2);
-	rhs[4][i][j][k] = rhs[4][i][j][k] + dz5tz1 * 
-	  (u[4][i][j][k+1] - 2.0*u[4][i][j][k] + 
+	rhs[4][i][j][k] = rhs[4][i][j][k] + dz5tz1 *
+	  (u[4][i][j][k+1] - 2.0*u[4][i][j][k] +
 	   u[4][i][j][k-1]) +
-	  zzcon3 * (qs[i][j][k+1] - 2.0*qs[i][j][k] + 
+	  zzcon3 * (qs[i][j][k+1] - 2.0*qs[i][j][k] +
 		    qs[i][j][k-1]) +
-	  zzcon4 * (wp1*wp1 - 2.0*wijk*wijk + 
+	  zzcon4 * (wp1*wp1 - 2.0*wijk*wijk +
 		    wm1*wm1) +
-	  zzcon5 * (u[4][i][j][k+1]*rho_i[i][j][k+1] - 
+	  zzcon5 * (u[4][i][j][k+1]*rho_i[i][j][k+1] -
 		    2.0*u[4][i][j][k]*rho_i[i][j][k] +
 		    u[4][i][j][k-1]*rho_i[i][j][k-1]) -
-	  tz2 * ( (c1*u[4][i][j][k+1] - 
+	  tz2 * ( (c1*u[4][i][j][k+1] -
 		   c2*square[i][j][k+1])*wp1 -
-		  (c1*u[4][i][j][k-1] - 
+		  (c1*u[4][i][j][k-1] -
 		   c2*square[i][j][k-1])*wm1);
       }
     }
   }
 
 /*--------------------------------------------------------------------
-c      add fourth order zeta-direction dissipation                
+c      add fourth order zeta-direction dissipation
 c-------------------------------------------------------------------*/
 
   k = 1;
@@ -1667,7 +1669,7 @@ c-------------------------------------------------------------------*/
 #pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (j = 1; j <= grid_points[1]-2; j++) {
-	rhs[m][i][j][k] = rhs[m][i][j][k]- dssp * 
+	rhs[m][i][j][k] = rhs[m][i][j][k]- dssp *
 	  ( 5.0*u[m][i][j][k] - 4.0*u[m][i][j][k+1] +
 	    u[m][i][j][k+2]);
       }
@@ -1679,7 +1681,7 @@ c-------------------------------------------------------------------*/
 #pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (j = 1; j <= grid_points[1]-2; j++) {
-	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp * 
+	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
 	  (-4.0*u[m][i][j][k-1] + 6.0*u[m][i][j][k] -
 	   4.0*u[m][i][j][k+1] + u[m][i][j][k+2]);
       }
@@ -1691,22 +1693,22 @@ c-------------------------------------------------------------------*/
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (j = 1; j <= grid_points[1]-2; j++) {
 	for (k = 3*1; k <= grid_points[2]-3*1-1; k++) {
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - dssp * 
-	    (  u[m][i][j][k-2] - 4.0*u[m][i][j][k-1] + 
-	       6.0*u[m][i][j][k] - 4.0*u[m][i][j][k+1] + 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
+	    (  u[m][i][j][k-2] - 4.0*u[m][i][j][k-1] +
+	       6.0*u[m][i][j][k] - 4.0*u[m][i][j][k+1] +
 	       u[m][i][j][k+2] );
 	}
       }
     }
   }
- 
+
   k = grid_points[2]-3;
   for (m = 0; m < 5; m++) {
 #pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (j = 1; j <= grid_points[1]-2; j++) {
 	rhs[m][i][j][k] = rhs[m][i][j][k] - dssp *
-	  ( u[m][i][j][k-2] - 4.0*u[m][i][j][k-1] + 
+	  ( u[m][i][j][k-2] - 4.0*u[m][i][j][k-1] +
 	    6.0*u[m][i][j][k] - 4.0*u[m][i][j][k+1] );
       }
     }
@@ -1734,7 +1736,7 @@ c-------------------------------------------------------------------*/
       }
     }
   }
-}    
+}
 
 }
 
@@ -1759,7 +1761,7 @@ static void set_constants(void) {
   ce[10][0] = 0.5;
   ce[11][0] = 0.4;
   ce[12][0] = 0.3;
- 
+
   ce[0][1]  = 1.0;
   ce[1][1]  = 0.0;
   ce[2][1]  = 0.0;
@@ -1842,7 +1844,7 @@ static void set_constants(void) {
   ty1 = 1.0 / (dnym1 * dnym1);
   ty2 = 1.0 / (2.0 * dnym1);
   ty3 = 1.0 / dnym1;
- 
+
   tz1 = 1.0 / (dnzm1 * dnzm1);
   tz2 = 1.0 / (2.0 * dnzm1);
   tz3 = 1.0 / dnzm1;
@@ -1901,13 +1903,13 @@ static void set_constants(void) {
   dx3tx1 = dx3*tx1;
   dx4tx1 = dx4*tx1;
   dx5tx1 = dx5*tx1;
-        
+
   dy1ty1 = dy1*ty1;
   dy2ty1 = dy2*ty1;
   dy3ty1 = dy3*ty1;
   dy4ty1 = dy4*ty1;
   dy5ty1 = dy5*ty1;
-        
+
   dz1tz1 = dz1*tz1;
   dz2tz1 = dz2*tz1;
   dz3tz1 = dz3*tz1;
@@ -1917,7 +1919,7 @@ static void set_constants(void) {
   c2iv  = 2.5;
   con43 = 4.0/3.0;
   con16 = 1.0/6.0;
-        
+
   xxcon1 = c3c4tx3*con43*tx3;
   xxcon2 = c3c4tx3*tx3;
   xxcon3 = c3c4tx3*conz1*tx3;
@@ -1946,14 +1948,14 @@ static void txinvr(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c block-diagonal matrix-vector multiplication                  
+c block-diagonal matrix-vector multiplication
 --------------------------------------------------------------------*/
 
   int i, j, k;
-  double t1, t2, t3, ac, ru1, uu, vv, ww, r1, r2, r3, 
+  double t1, t2, t3, ac, ru1, uu, vv, ww, r1, r2, r3,
     r4, r5, ac2inv;
 
-#pragma omp for  
+#pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
@@ -1971,7 +1973,7 @@ c block-diagonal matrix-vector multiplication
 	r4 = rhs[3][i][j][k];
 	r5 = rhs[4][i][j][k];
 
-	t1 = c2 * ac2inv * ( qs[i][j][k]*r1 - uu*r2  - 
+	t1 = c2 * ac2inv * ( qs[i][j][k]*r1 - uu*r2  -
 			     vv*r3 - ww*r4 + r5 );
 	t2 = bt * ru1 * ( uu * r1 - r2 );
 	t3 = ( bt * ru1 * ac ) * t1;
@@ -1995,13 +1997,13 @@ static void tzetar(void) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c   block-diagonal matrix-vector multiplication                       
+c   block-diagonal matrix-vector multiplication
 c-------------------------------------------------------------------*/
 
   int i, j, k;
-  double t1, t2, t3, ac, xvel, yvel, zvel, r1, r2, r3, 
+  double t1, t2, t3, ac, xvel, yvel, zvel, r1, r2, r3,
     r4, r5, btuz, acinv, ac2u, uzik1;
-  
+
 #pragma omp for private(i,j,k,t1,t2,t3,ac,xvel,yvel,zvel,r1,r2,r3,r4,r5,btuz,ac2u,uzik1)
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (j = 1; j <= grid_points[1]-2; j++) {
@@ -2032,7 +2034,7 @@ c-------------------------------------------------------------------*/
 	rhs[1][i][j][k] = -uzik1*r2 + xvel*t2;
 	rhs[2][i][j][k] =  uzik1*r1 + yvel*t2;
 	rhs[3][i][j][k] =  zvel*t2  + t3;
-	rhs[4][i][j][k] =  uzik1*(-xvel*r2 + yvel*r1) + 
+	rhs[4][i][j][k] =  uzik1*(-xvel*r2 + yvel*r1) +
 	  qs[i][j][k]*t2 + c2iv*ac2u*t1 + zvel*t3;
       }
     }
@@ -2049,10 +2051,10 @@ static void verify(int no_time_steps, char *class, boolean *verified) {
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c  verification routine                         
+c  verification routine
 --------------------------------------------------------------------*/
 
-  double xcrref[5],xceref[5],xcrdif[5],xcedif[5], 
+  double xcrref[5],xceref[5],xcrdif[5],xcedif[5],
     epsilon, xce[5], xcr[5], dtref;
   int m;
 
@@ -2230,13 +2232,13 @@ c    Reference values of RMS-norms of solution error.
     xceref[2] = 0.5132886416320e-01;
     xceref[3] = 0.4806073419454e-01;
     xceref[4] = 0.5483377491301e+00;
-    
+
   } else {
     *verified = FALSE;
   }
 
 /*--------------------------------------------------------------------
-c    verification test for residuals if gridsize is either 12X12X12 or 
+c    verification test for residuals if gridsize is either 12X12X12 or
 c    64X64X64 or 102X102X102 or 162X162X162
 --------------------------------------------------------------------*/
 
@@ -2244,10 +2246,10 @@ c    64X64X64 or 102X102X102 or 162X162X162
 c    Compute the difference of solution values and the known reference values.
 --------------------------------------------------------------------*/
   for (m = 0; m < 5; m++) {
-           
+
     xcrdif[m] = fabs((xcr[m]-xcrref[m])/xcrref[m]) ;
     xcedif[m] = fabs((xce[m]-xceref[m])/xceref[m]);
-           
+
   }
 
 /*--------------------------------------------------------------------
@@ -2257,7 +2259,7 @@ c    Output the comparison of computed results to known cases.
   if (*class != 'U') {
     printf(" Verification being performed for class %1c\n", *class);
     printf(" accuracy setting for epsilon = %20.13e\n", epsilon);
-    
+
     if (fabs(dt-dtref) > epsilon) {
       *verified = FALSE;
       *class = 'U';
@@ -2291,7 +2293,7 @@ c    Output the comparison of computed results to known cases.
   } else {
     printf(" RMS-norms of solution error\n");
   }
-        
+
   for (m = 0; m < 5; m++) {
     if (*class == 'U') {
       printf("          %2d%20.13e\n", m, xce[m]);
@@ -2304,7 +2306,7 @@ c    Output the comparison of computed results to known cases.
 	     m,xce[m],xceref[m],xcedif[m]);
     }
   }
-        
+
   if (*class == 'U') {
     printf(" No reference values provided\n");
     printf(" No verification performed\n");
@@ -2337,12 +2339,12 @@ c systems for the x-lines. Boundary conditions are non-periodic
   double fac1, fac2;
 
 /*--------------------------------------------------------------------
-c                          FORWARD ELIMINATION  
+c                          FORWARD ELIMINATION
 --------------------------------------------------------------------*/
   lhsx();
 
 /*--------------------------------------------------------------------
-c      perform the Thomas algorithm; first, FORWARD ELIMINATION     
+c      perform the Thomas algorithm; first, FORWARD ELIMINATION
 --------------------------------------------------------------------*/
   n = 0;
   for (i = 0; i <= grid_points[0]-3; i++) {
@@ -2378,7 +2380,7 @@ c      perform the Thomas algorithm; first, FORWARD ELIMINATION
   }
 
 /*--------------------------------------------------------------------
-c      The last two rows in this grid block are a bit different, 
+c      The last two rows in this grid block are a bit different,
 c      since they do not have two more rows available for the
 c      elimination of off-diagonal entries
 --------------------------------------------------------------------*/
@@ -2404,7 +2406,7 @@ c      elimination of off-diagonal entries
       }
 
 /*--------------------------------------------------------------------
-c            scale the last row immediately 
+c            scale the last row immediately
 --------------------------------------------------------------------*/
       fac2               = 1./lhs[n+2][i1][j][k];
       for (m = 0; m < 3; m++) {
@@ -2414,7 +2416,7 @@ c            scale the last row immediately
   }
 
 /*--------------------------------------------------------------------
-c      do the u+c and the u-c factors                 
+c      do the u+c and the u-c factors
 --------------------------------------------------------------------*/
 
   for (m = 3; m < 5; m++) {
@@ -2450,7 +2452,7 @@ c         And again the last two rows separately
 --------------------------------------------------------------------*/
     i  = grid_points[0]-2;
     i1 = grid_points[0]-1;
-    
+
 #pragma omp for
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
@@ -2475,7 +2477,7 @@ c               Scale the last row immediately
   }
 
 /*--------------------------------------------------------------------
-c                         BACKSUBSTITUTION 
+c                         BACKSUBSTITUTION
 --------------------------------------------------------------------*/
 
   i  = grid_points[0]-2;
@@ -2513,7 +2515,7 @@ c      The first three factors
     for (m = 0; m < 3; m++) {
       for (j = 1; j <= grid_points[1]-2; j++) {
 	for (k = 1; k <= grid_points[2]-2; k++) {
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] -
 	    lhs[n+3][i][j][k]*rhs[m][i1][j][k] -
 	    lhs[n+4][i][j][k]*rhs[m][i2][j][k];
 	}
@@ -2532,7 +2534,7 @@ c      And the remaining two
 #pragma omp for
       for (j = 1; j <= grid_points[1]-2; j++) {
 	for (k = 1; k <= grid_points[2]-2; k++) {
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] -
 	    lhs[n+3][i][j][k]*rhs[m][i1][j][k] -
 	    lhs[n+4][i][j][k]*rhs[m][i2][j][k];
 	}
@@ -2543,7 +2545,7 @@ c      And the remaining two
 }
 
 /*--------------------------------------------------------------------
-c      Do the block-diagonal inversion          
+c      Do the block-diagonal inversion
 --------------------------------------------------------------------*/
   ninvr();
 }
@@ -2570,7 +2572,7 @@ c systems for the y-lines. Boundary conditions are non-periodic
   double fac1, fac2;
 
 /*--------------------------------------------------------------------
-c                          FORWARD ELIMINATION  
+c                          FORWARD ELIMINATION
 --------------------------------------------------------------------*/
   lhsy();
 
@@ -2579,7 +2581,7 @@ c                          FORWARD ELIMINATION
   for (j = 0; j <= grid_points[1]-3; j++) {
     j1 = j  + 1;
     j2 = j  + 2;
-#pragma omp for      
+#pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	fac1               = 1./lhs[n+2][i][j][k];
@@ -2609,14 +2611,14 @@ c                          FORWARD ELIMINATION
   }
 
 /*--------------------------------------------------------------------
-c      The last two rows in this grid block are a bit different, 
+c      The last two rows in this grid block are a bit different,
 c      since they do not have two more rows available for the
 c      elimination of off-diagonal entries
 --------------------------------------------------------------------*/
 
   j  = grid_points[1]-2;
   j1 = grid_points[1]-1;
-#pragma omp for      
+#pragma omp for
   for (i = 1; i <= grid_points[0]-2; i++) {
     for (k = 1; k <= grid_points[2]-2; k++) {
       fac1               = 1./lhs[n+2][i][j][k];
@@ -2634,7 +2636,7 @@ c      elimination of off-diagonal entries
 	  lhs[n+1][i][j1][k]*rhs[m][i][j][k];
       }
 /*--------------------------------------------------------------------
-c            scale the last row immediately 
+c            scale the last row immediately
 --------------------------------------------------------------------*/
       fac2               = 1./lhs[n+2][i][j1][k];
       for (m = 0; m < 3; m++) {
@@ -2644,14 +2646,14 @@ c            scale the last row immediately
   }
 
 /*--------------------------------------------------------------------
-c      do the u+c and the u-c factors                 
+c      do the u+c and the u-c factors
 --------------------------------------------------------------------*/
   for (m = 3; m < 5; m++) {
     n = (m-3+1)*5;
     for (j = 0; j <= grid_points[1]-3; j++) {
       j1 = j  + 1;
       j2 = j  + 2;
-#pragma omp for      
+#pragma omp for
       for (i = 1; i <= grid_points[0]-2; i++) {
 	for (k = 1; k <= grid_points[2]-2; k++) {
 	  fac1               = 1./lhs[n+2][i][j][k];
@@ -2679,7 +2681,7 @@ c         And again the last two rows separately
 --------------------------------------------------------------------*/
     j  = grid_points[1]-2;
     j1 = grid_points[1]-1;
-#pragma omp for      
+#pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	fac1               = 1./lhs[n+2][i][j][k];
@@ -2693,7 +2695,7 @@ c         And again the last two rows separately
 	rhs[m][i][j1][k]   = rhs[m][i][j1][k] -
 	  lhs[n+1][i][j1][k]*rhs[m][i][j][k];
 /*--------------------------------------------------------------------
-c               Scale the last row immediately 
+c               Scale the last row immediately
 --------------------------------------------------------------------*/
 	fac2               = 1./lhs[n+2][i][j1][k];
 	rhs[m][i][j1][k]   = fac2*rhs[m][i][j1][k];
@@ -2702,14 +2704,14 @@ c               Scale the last row immediately
   }
 
 /*--------------------------------------------------------------------
-c                         BACKSUBSTITUTION 
+c                         BACKSUBSTITUTION
 --------------------------------------------------------------------*/
 
   j  = grid_points[1]-2;
   j1 = grid_points[1]-1;
   n = 0;
   for (m = 0; m < 3; m++) {
-#pragma omp for      
+#pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	rhs[m][i][j][k] = rhs[m][i][j][k] -
@@ -2719,7 +2721,7 @@ c                         BACKSUBSTITUTION
   }
 
   for (m = 3; m < 5; m++) {
-#pragma omp for      
+#pragma omp for
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 	n = (m-3+1)*5;
@@ -2737,10 +2739,10 @@ c      The first three factors
     for (j = grid_points[1]-3; j >= 0; j--) {
       j1 = j  + 1;
       j2 = j  + 2;
-#pragma omp for      
+#pragma omp for
       for (i = 1; i <= grid_points[0]-2; i++) {
 	for (k = 1; k <= grid_points[2]-2; k++) {
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] -
 	    lhs[n+3][i][j][k]*rhs[m][i][j1][k] -
 	    lhs[n+4][i][j][k]*rhs[m][i][j2][k];
 	}
@@ -2756,10 +2758,10 @@ c      And the remaining two
     for (j = grid_points[1]-3; j >= 0; j--) {
       j1 = j  + 1;
       j2 = j1 + 1;
-#pragma omp for      
+#pragma omp for
       for (i = 1; i <= grid_points[0]-2; i++) {
 	for (k = 1; k <= grid_points[2]-2; k++) {
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] -
 	    lhs[n+3][i][j][k]*rhs[m][i][j1][k] -
 	    lhs[n+4][i][j][k]*rhs[m][i][j2][k];
 	}
@@ -2794,7 +2796,7 @@ c-------------------------------------------------------------------*/
   double fac1, fac2;
 
 /*--------------------------------------------------------------------
-c                          FORWARD ELIMINATION  
+c                          FORWARD ELIMINATION
 c-------------------------------------------------------------------*/
 
   lhsz();
@@ -2834,7 +2836,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      The last two rows in this grid block are a bit different, 
+c      The last two rows in this grid block are a bit different,
 c      since they do not have two more rows available for the
 c      elimination of off-diagonal entries
 c-------------------------------------------------------------------*/
@@ -2869,7 +2871,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c      do the u+c and the u-c factors               
+c      do the u+c and the u-c factors
 c-------------------------------------------------------------------*/
   for (m = 3; m < 5; m++) {
     n = (m-3+1)*5;
@@ -2929,7 +2931,7 @@ c-------------------------------------------------------------------*/
   }
 
 /*--------------------------------------------------------------------
-c                         BACKSUBSTITUTION 
+c                         BACKSUBSTITUTION
 c-------------------------------------------------------------------*/
 
   k  = grid_points[2]-2;
@@ -2958,7 +2960,7 @@ c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
 c      Whether or not this is the last processor, we always have
-c      to complete the back-substitution 
+c      to complete the back-substitution
 c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
@@ -2972,7 +2974,7 @@ c-------------------------------------------------------------------*/
 	for (k = grid_points[2]-3; k >= 0; k--) {
 	  k1 = k  + 1;
 	  k2 = k  + 2;
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] -
 	    lhs[n+3][i][j][k]*rhs[m][i][j][k1] -
 	    lhs[n+4][i][j][k]*rhs[m][i][j][k2];
 	}
@@ -2991,7 +2993,7 @@ c-------------------------------------------------------------------*/
 	for (k = grid_points[2]-3; k >= 0; k--) {
 	  k1 = k  + 1;
 	  k2 = k  + 2;
-	  rhs[m][i][j][k] = rhs[m][i][j][k] - 
+	  rhs[m][i][j][k] = rhs[m][i][j][k] -
 	    lhs[n+3][i][j][k]*rhs[m][i][j][k1] -
 	    lhs[n+4][i][j][k]*rhs[m][i][j][k2];
 	}

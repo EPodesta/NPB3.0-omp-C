@@ -1,10 +1,10 @@
 /*--------------------------------------------------------------------
-  
+
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - CG
 
   This benchmark is an OpenMP C version of the NPB CG code.
-  
-  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions 
+
+  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions
   in "NPB 2.3-serial" developed by NAS. 3.0 translation is performed by the UVSQ.
 
   Permission to use, copy, distribute and modify this software for any
@@ -14,9 +14,9 @@
   Information on OpenMP activities at RWCP is available at:
 
            http://pdplab.trc.rwcp.or.jp/pdperf/Omni/
-  
+
   Information on NAS Parallel Benchmarks 2.3 is available at:
-  
+
            http://www.nas.nasa.gov/NAS/NPB/
 
 --------------------------------------------------------------------*/
@@ -26,14 +26,14 @@
            C. Kuszmaul
 
   OpenMP C version: S. Satoh
-  
-  3.0 structure translation: F. Conti 
+
+  3.0 structure translation: F. Conti
 
 --------------------------------------------------------------------*/
 
 /*
 c---------------------------------------------------------------------
-c  Note: please observe that in the routine conj_grad three 
+c  Note: please observe that in the routine conj_grad three
 c  implementations of the sparse matrix-vector multiply have
 c  been supplied.  The default matrix-vector multiply is not
 c  loop unrolled.  The alternate implementations are unrolled
@@ -115,6 +115,8 @@ int main(int argc, char **argv) {
     boolean verified;
     double zeta_verify_value, epsilon;
 
+	omp_set_num_threads(16);
+
     firstrow = 1;
     lastrow  = NA;
     firstcol = 1;
@@ -155,22 +157,22 @@ c-------------------------------------------------------------------*/
     zeta    = randlc( &tran, amult );
 
 /*--------------------------------------------------------------------
-c  
+c
 c-------------------------------------------------------------------*/
     makea(naa, nzz, a, colidx, rowstr, NONZER,
-	  firstrow, lastrow, firstcol, lastcol, 
+	  firstrow, lastrow, firstcol, lastcol,
 	  RCOND, arow, acol, aelt, v, iv, SHIFT);
-    
+
 /*---------------------------------------------------------------------
 c  Note: as a result of the above call to makea:
 c        values of j used in indexing rowstr go from 1 --> lastrow-firstrow+1
 c        values of colidx which are col indexes go from firstcol --> lastcol
 c        So:
-c        Shift the col index vals from actual (firstcol --> lastcol ) 
+c        Shift the col index vals from actual (firstcol --> lastcol )
 c        to local, i.e., (1 --> lastcol-firstcol+1)
 c---------------------------------------------------------------------*/
 #pragma omp parallel default(shared) private(i,j,k)
-{	
+{
 #pragma omp for nowait
     for (j = 1; j <= lastrow - firstrow + 1; j++) {
 	for (k = rowstr[j]; k < rowstr[j+1]; k++) {
@@ -230,7 +232,7 @@ c-------------------------------------------------------------------*/
 	for (j = 1; j <= lastcol-firstcol+1; j++) {
             x[j] = norm_temp12*z[j];
 	}
-	
+
     } /* end of do one iteration untimed */
 
 /*--------------------------------------------------------------------
@@ -239,7 +241,7 @@ c-------------------------------------------------------------------*/
 #pragma omp parallel for default(shared) private(i)
     for (i = 1; i <= NA+1; i++) {
          x[i] = 1.0;
-    }  
+    }
     zeta  = 0.0;
 
 
@@ -336,8 +338,8 @@ c-------------------------------------------------------------------*/
 	mflops = 0.0;
     }
 
-    c_print_results("CG", class, NA, 0, 0, NITER, nthreads, t, 
-		    mflops, "          floating point", 
+    c_print_results("CG", class, NA, 0, 0, NITER, nthreads, t,
+		    mflops, "          floating point",
 		    verified, NPBVERSION, COMPILETIME,
 		    CS1, CS2, CS3, CS4, CS5, CS6, CS7);
 }
@@ -357,9 +359,9 @@ static void conj_grad (
     double *rnorm )
 /*--------------------------------------------------------------------
 c-------------------------------------------------------------------*/
-    
+
 /*---------------------------------------------------------------------
-c  Floaging point arrays here are named as in NPB1 spec discussion of 
+c  Floaging point arrays here are named as in NPB1 spec discussion of
 c  CG algorithm
 c---------------------------------------------------------------------*/
 {
@@ -370,7 +372,7 @@ c---------------------------------------------------------------------*/
 
     rho = 0.0;
 #pragma omp parallel default(shared) private(j,sum) shared(rho,naa)
-    
+
 /*--------------------------------------------------------------------
 c  Initialize the CG algorithm:
 c-------------------------------------------------------------------*/
@@ -404,22 +406,22 @@ c-------------------------------------------------------------------*/
       rho = 0.0;
 #pragma omp parallel default(shared) private(j,k,sum,alpha,beta) shared(d,rho0,rho)
 {
-      
+
 /*--------------------------------------------------------------------
 c  q = A.p
 c  The partition submatrix-vector multiply: use workspace w
 c---------------------------------------------------------------------
 C
-C  NOTE: this version of the multiply is actually (slightly: maybe %5) 
-C        faster on the sp2 on 16 nodes than is the unrolled-by-2 version 
-C        below.   On the Cray t3d, the reverse is true, i.e., the 
-C        unrolled-by-two version is some 10% faster.  
+C  NOTE: this version of the multiply is actually (slightly: maybe %5)
+C        faster on the sp2 on 16 nodes than is the unrolled-by-2 version
+C        below.   On the Cray t3d, the reverse is true, i.e., the
+C        unrolled-by-two version is some 10% faster.
 C        The unrolled-by-8 version below is significantly faster
 C        on the Cray t3d - overall speed of code is 1.5 times faster.
 */
 
-/* rolled version */    
-#pragma omp for 
+/* rolled version */
+#pragma omp for
 	for (j = 1; j <= lastrow-firstrow+1; j++) {
             sum = 0.0;
 	    for (k = rowstr[j]; k < rowstr[j+1]; k++) {
@@ -428,13 +430,13 @@ C        on the Cray t3d - overall speed of code is 1.5 times faster.
             //w[j] = sum;
             q[j] = sum;
 	}
-	
+
 /* unrolled-by-two version
 #pragma omp for private(i,k)
         for (j = 1; j <= lastrow-firstrow+1; j++) {
 	    int iresidue;
 	    double sum1, sum2;
-	    i = rowstr[j]; 
+	    i = rowstr[j];
             iresidue = (rowstr[j+1]-i) % 2;
             sum1 = 0.0;
             sum2 = 0.0;
@@ -450,7 +452,7 @@ C        on the Cray t3d - overall speed of code is 1.5 times faster.
 #pragma omp for private(i,k,sum)
         for (j = 1; j <= lastrow-firstrow+1; j++) {
 	    int iresidue;
-            i = rowstr[j]; 
+            i = rowstr[j];
             iresidue = (rowstr[j+1]-i) % 8;
             sum = 0.0;
             for (k = i; k <= i+iresidue-1; k++) {
@@ -469,7 +471,7 @@ C        on the Cray t3d - overall speed of code is 1.5 times faster.
             w[j] = sum;
         }
 */
-/*	
+/*
 #pragma omp for
 	for (j = 1; j <= lastcol-firstcol+1; j++) {
             q[j] = w[j];
@@ -495,7 +497,7 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c  Obtain alpha = rho / (p.q)
 c-------------------------------------------------------------------*/
-//#pragma omp single	
+//#pragma omp single
 	alpha = rho0 / d;
 
 /*--------------------------------------------------------------------
@@ -507,12 +509,12 @@ c-------------------------------------------------------------------*/
 c  Obtain z = z + alpha*p
 c  and    r = r - alpha*q
 c---------------------------------------------------------------------*/
-#pragma omp for reduction(+:rho)	
+#pragma omp for reduction(+:rho)
 	for (j = 1; j <= lastcol-firstcol+1; j++) {
             z[j] = z[j] + alpha*p[j];
             r[j] = r[j] - alpha*q[j];
 //	}
-            
+
 /*---------------------------------------------------------------------
 c  rho = r.r
 c  Now, obtain the norm of r: First, sum squares of r elements locally...
@@ -527,7 +529,7 @@ c---------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c  Obtain beta:
 c-------------------------------------------------------------------*/
-//#pragma omp single	
+//#pragma omp single
 	beta = rho / rho0;
 
 /*--------------------------------------------------------------------
@@ -547,7 +549,7 @@ c  First, form A.z
 c  The partition submatrix-vector multiply
 c---------------------------------------------------------------------*/
     sum = 0.0;
-    
+
 #pragma omp parallel default(shared) private(j,d) shared(sum)
 {
 #pragma omp for //private(d, k)
@@ -734,7 +736,7 @@ c-------------------------------------------------------------------*/
 	mark[j] = FALSE;
     }
     rowstr[n+1] = 0;
-    
+
     for (nza = 1; nza <= nnza; nza++) {
 	j = (arow[nza] - firstrow + 1) + 1;
 	rowstr[j] = rowstr[j] + 1;
@@ -749,7 +751,7 @@ c-------------------------------------------------------------------*/
 c     ... rowstr(j) now is the location of the first nonzero
 c           of row j of a
 c---------------------------------------------------------------------*/
-    
+
 /*---------------------------------------------------------------------
 c     ... preload data pages
 c---------------------------------------------------------------------*/
@@ -781,7 +783,7 @@ c-------------------------------------------------------------------*/
 c       ... generate the actual output rows by adding elements
 c-------------------------------------------------------------------*/
     nza = 0;
-#pragma omp parallel for default(shared) private(i)    
+#pragma omp parallel for default(shared) private(i)
     for (i = 1; i <= n; i++) {
 	x[i] = 0.0;
 	mark[i] = FALSE;
@@ -790,7 +792,7 @@ c-------------------------------------------------------------------*/
     jajp1 = rowstr[1];
     for (j = 1; j <= nrows; j++) {
 	nzrow = 0;
-	
+
 /*--------------------------------------------------------------------
 c          ...loop over the jth row of a
 c-------------------------------------------------------------------*/

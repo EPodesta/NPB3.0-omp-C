@@ -77,14 +77,15 @@ FLINKFLAGS =
 #---------------------------------------------------------------------------
 # This is the C compiler used for OpenMP programs
 #---------------------------------------------------------------------------
-CC = cc
+CC = gcc
 # This links C programs; usually the same as ${CC}
-CLINK	= cc
+CLINK	= gcc
 
 #---------------------------------------------------------------------------
 # These macros are passed to the linker
 #---------------------------------------------------------------------------
-C_LIB  = -lm -fopenmp
+/* C_LIB  = -lm -fopenmp */
+C_LIB  =
 
 #---------------------------------------------------------------------------
 # These macros are passed to the compiler
@@ -94,7 +95,8 @@ C_INC = -I../common
 #---------------------------------------------------------------------------
 # Global *compile time* flags for C programs
 #---------------------------------------------------------------------------
-CFLAGS	= -O3 -lm -fopenmp
+/* CFLAGS	= -O3 -lm -fopenmp */
+CFLAGS	= -O3
 # CFLAGS = -g
 
 #---------------------------------------------------------------------------
@@ -111,7 +113,7 @@ CLINKFLAGS =
 # this compiler go here also; typically there are few flags required; hence
 # there are no separate macros provided for such flags.
 #---------------------------------------------------------------------------
-UCC	= cc -O
+UCC	= gcc -O
 
 
 #---------------------------------------------------------------------------

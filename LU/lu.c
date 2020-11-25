@@ -1,10 +1,10 @@
 /*--------------------------------------------------------------------
-  
+
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - LU
 
   This benchmark is an OpenMP C version of the NPB LU code.
-  
-  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions 
+
+  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions
   in "NPB 2.3-serial" developed by NAS. 3.0 translation is performed by the UVSQ.
 
   Permission to use, copy, distribute and modify this software for any
@@ -14,9 +14,9 @@
   Information on OpenMP activities at RWCP is available at:
 
            http://pdplab.trc.rwcp.or.jp/pdperf/Omni/
-  
+
   Information on NAS Parallel Benchmarks 2.3 is available at:
-  
+
            http://www.nas.nasa.gov/NAS/NPB/
 
 --------------------------------------------------------------------*/
@@ -30,7 +30,7 @@
   OpenMP C version: S. Satoh
 
   3.0 structure translation: M. Popov
-  
+
 --------------------------------------------------------------------*/
 
 #include "npb-C.h"
@@ -102,6 +102,8 @@ c
   double mflops;
   int nthreads = 1;
 
+  omp_set_num_threads(16);
+
 /*--------------------------------------------------------------------
 c   read input data
 --------------------------------------------------------------------*/
@@ -131,14 +133,14 @@ c   set the initial values for dependent variables
 c   compute the forcing term based on prescribed exact solution
 --------------------------------------------------------------------*/
   erhs();
-  
+
 #pragma omp parallel
-{  
-  
-#if defined(_OPENMP)  
+{
+
+#if defined(_OPENMP)
 #pragma omp master
   nthreads = omp_get_num_threads();
-#endif /* _OPENMP */  
+#endif /* _OPENMP */
 }
 
 /*--------------------------------------------------------------------
@@ -170,8 +172,8 @@ c   verification test
 
   c_print_results("LU", class, nx0,
 		  ny0, nz0, itmax, nthreads,
-		  maxtime, mflops, "          floating point", verified, 
-		  NPBVERSION, COMPILETIME, CS1, CS2, CS3, CS4, CS5, CS6, 
+		  maxtime, mflops, "          floating point", verified,
+		  NPBVERSION, COMPILETIME, CS1, CS2, CS3, CS4, CS5, CS6,
 		  "(none)");
 }
 
@@ -181,7 +183,7 @@ c   verification test
 static void blts (int nx, int ny, int nz, int k,
 		  double omega,
 /*--------------------------------------------------------------------
-c   To improve cache performance, second two dimensions padded by 1 
+c   To improve cache performance, second two dimensions padded by 1
 c   for even number sizes only.  Only needed in v.
 --------------------------------------------------------------------*/
 		  double v[ISIZ1][ISIZ2/2*2+1][ISIZ3/2*2+1][5],
@@ -222,8 +224,8 @@ c  local variables
 
 #pragma omp for nowait schedule(static)
   for (i = ist; i <= iend; i++) {
-    
-#if defined(_OPENMP)      
+
+#if defined(_OPENMP)
     if (i != ist) {
 	while (flag[i-1] == 0) {
 #pragma omp flush(flag)
@@ -237,7 +239,7 @@ c  local variables
 	}
     }
 #endif /* _OPENMP */
-    
+
     for (j = jst; j <= jend; j++) {
       for (m = 0; m < 5; m++) {
 
@@ -253,7 +255,7 @@ c  local variables
 		      + ldy[i][j][m][4] * v[i][j-1][k][4]
 		      + ldx[i][j][m][4] * v[i-1][j][k][4] );
       }
-       
+
 /*--------------------------------------------------------------------
 c   diagonal block inversion
 c
@@ -403,12 +405,12 @@ c   back substitution
       v[i][j][k][0] = v[i][j][k][0]
 	/ tmat[0][0];
     }
-    
-#if defined(_OPENMP)    
+
+#if defined(_OPENMP)
     if (i != ist) flag[i-1] = 0;
     if (i != iend) flag[i] = 1;
-#pragma omp flush(flag)    
-#endif /* _OPENMP */    
+#pragma omp flush(flag)
+#endif /* _OPENMP */
   }
 }
 
@@ -418,7 +420,7 @@ c   back substitution
 static void buts(int nx, int ny, int nz, int k,
 		 double omega,
 /*--------------------------------------------------------------------
-c   To improve cache performance, second two dimensions padded by 1 
+c   To improve cache performance, second two dimensions padded by 1
 c   for even number sizes only.  Only needed in v.
 --------------------------------------------------------------------*/
 		 double v[ISIZ1][ISIZ2/2*2+1][ISIZ3/2*2+1][5],
@@ -448,7 +450,7 @@ c  local variables
   for (i = iend; i >= ist; i--) {
     for (j = jend; j >= jst; j--) {
       for (m = 0; m < 5; m++) {
-	tv[i][j][m] = 
+	tv[i][j][m] =
 	  omega * (  udz[i][j][m][0] * v[i][j][k+1][0]
 		     + udz[i][j][m][1] * v[i][j][k+1][1]
 		     + udz[i][j][m][2] * v[i][j][k+1][2]
@@ -460,7 +462,7 @@ c  local variables
 
 #pragma omp for nowait schedule(static)
   for (i = iend; i >= ist; i--) {
-#if defined(_OPENMP)      
+#if defined(_OPENMP)
     if (i != iend) {
       while (flag[i+1] == 0) {
 #pragma omp flush(flag)
@@ -474,7 +476,7 @@ c  local variables
       }
     }
 #endif /* _OPENMP */
-    
+
     for (j = jend; j >= jst; j--) {
       for (m = 0; m < 5; m++) {
 	tv[i][j][m] = tv[i][j][m]
@@ -643,12 +645,12 @@ c   back substitution
       v[i][j][k][3] = v[i][j][k][3] - tv[i][j][3];
       v[i][j][k][4] = v[i][j][k][4] - tv[i][j][4];
     }
-    
-#if defined(_OPENMP)    
+
+#if defined(_OPENMP)
     if (i != iend) flag[i+1] = 0;
     if (i != ist) flag[i] = 1;
 #pragma omp flush(flag)
-#endif /* _OPENMP */    
+#endif /* _OPENMP */
   }
 }
 
@@ -787,7 +789,7 @@ c   xi-direction flux differences
 		      + rsd[i][j][k][2] * rsd[i][j][k][2]
 		      + rsd[i][j][k][3] * rsd[i][j][k][3] )
 	  / rsd[i][j][k][0];
-	flux[i][j][k][1] = rsd[i][j][k][1] * u21 + C2 * 
+	flux[i][j][k][1] = rsd[i][j][k][1] * u21 + C2 *
 	  ( rsd[i][j][k][4] - q );
 	flux[i][j][k][2] = rsd[i][j][k][2] * u21;
 	flux[i][j][k][3] = rsd[i][j][k][3] * u21;
@@ -820,7 +822,7 @@ c   xi-direction flux differences
 	u41im1 = tmp * rsd[i-1][j][k][3];
 	u51im1 = tmp * rsd[i-1][j][k][4];
 
-	flux[i][j][k][1] = (4.0/3.0) * tx3 * 
+	flux[i][j][k][1] = (4.0/3.0) * tx3 *
 	  ( u21i - u21im1 );
 	flux[i][j][k][2] = tx3 * ( u31i - u31im1 );
 	flux[i][j][k][3] = tx3 * ( u41i - u41im1 );
@@ -919,7 +921,7 @@ c   eta-direction flux differences
 		      + rsd[i][j][k][3] * rsd[i][j][k][3] )
 	  / rsd[i][j][k][0];
 	flux[i][j][k][1] = rsd[i][j][k][1] * u31;
-	flux[i][j][k][2] = rsd[i][j][k][2] * u31 + C2 * 
+	flux[i][j][k][2] = rsd[i][j][k][2] * u31 + C2 *
 	  ( rsd[i][j][k][4] - q );
 	flux[i][j][k][3] = rsd[i][j][k][3] * u31;
 	flux[i][j][k][4] = ( C1 * rsd[i][j][k][4] - C2 * q ) * u31;
@@ -952,7 +954,7 @@ c   eta-direction flux differences
 	u51jm1 = tmp * rsd[i][j-1][k][4];
 
 	flux[i][j][k][1] = ty3 * ( u21j - u21jm1 );
-	flux[i][j][k][2] = (4.0/3.0) * ty3 * 
+	flux[i][j][k][2] = (4.0/3.0) * ty3 *
 	  ( u31j - u31jm1 );
 	flux[i][j][k][3] = ty3 * ( u41j - u41jm1 );
 	flux[i][j][k][4] = 0.50 * ( 1.0 - C1*C5 )
@@ -1049,7 +1051,7 @@ c   zeta-direction flux differences
 	  / rsd[i][j][k][0];
 	flux[i][j][k][1] = rsd[i][j][k][1] * u41;
 	flux[i][j][k][2] = rsd[i][j][k][2] * u41;
-	flux[i][j][k][3] = rsd[i][j][k][3] * u41 + C2 * 
+	flux[i][j][k][3] = rsd[i][j][k][3] * u41 + C2 *
 	  ( rsd[i][j][k][4] - q );
 	flux[i][j][k][4] = ( C1 * rsd[i][j][k][4] - C2 * q ) * u41;
       }
@@ -1077,7 +1079,7 @@ c   zeta-direction flux differences
 
 	flux[i][j][k][1] = tz3 * ( u21k - u21km1 );
 	flux[i][j][k][2] = tz3 * ( u31k - u31km1 );
-	flux[i][j][k][3] = (4.0/3.0) * tz3 * ( u41k 
+	flux[i][j][k][3] = (4.0/3.0) * tz3 * ( u41k
 					    - u41km1 );
 	flux[i][j][k][4] = 0.50 * ( 1.0 - C1*C5 )
 	  * tz3 * ( ( u21k  *u21k + u31k  *u31k + u41k  *u41k )
@@ -1177,7 +1179,7 @@ c  local variables
   for (m = 0; m < 5; m++) {
     errnm[m] = 0.0;
   }
-  
+
   for (i = ist; i <= iend; i++) {
     iglob = i;
     for (j = jst; j <= jend; j++) {
@@ -1282,7 +1284,7 @@ c   form the block daigonal
 	     + ty1 * ( -       c34 * tmp2 * u[i][j][k][1] )
 	     + tz1 * ( -       c34 * tmp2 * u[i][j][k][1] ) );
       d[i][j][1][1] =  1.0
-	+ dt * 2.0 
+	+ dt * 2.0
 	* (  tx1 * r43 * c34 * tmp1
 	     + ty1 *       c34 * tmp1
 	     + tz1 *       c34 * tmp1 )
@@ -1504,7 +1506,7 @@ c   form the second block sub-diagonal
 	* ( c34 - c1345 ) * tmp2 * u[i][j-1][k][1];
       b[i][j][4][2] = - dt * ty2
 	* ( C1 * ( u[i][j-1][k][4] * tmp1 )
-	    - 0.50 * C2 
+	    - 0.50 * C2
 	    * ( (  u[i][j-1][k][1]*u[i][j-1][k][1]
                    + 3.0 * u[i][j-1][k][2]*u[i][j-1][k][2]
 		   + u[i][j-1][k][3]*u[i][j-1][k][3] ) * tmp2 ) )
@@ -1626,13 +1628,13 @@ c  local variables
   c34 = C3 * C4;
 
 #pragma omp for nowait schedule(static)
-#if defined(_OPENMP)  
+#if defined(_OPENMP)
   for (i = iend; i >= ist; i--) {
       for (j = jend; j >= jst; j--) {
-#else	  
+#else
   for (i = ist; i <= iend; i++) {
     for (j = jst; j <= jend; j++) {
-#endif	
+#endif
 
 /*--------------------------------------------------------------------
 c   form the block daigonal
@@ -1655,7 +1657,7 @@ c   form the block daigonal
 	     + ty1 * ( -       c34 * tmp2 * u[i][j][k][1] )
 	     + tz1 * ( -       c34 * tmp2 * u[i][j][k][1] ) );
       d[i][j][1][1] =  1.0
-	+ dt * 2.0 
+	+ dt * 2.0
 	* (  tx1 * r43 * c34 * tmp1
 	     + ty1 *       c34 * tmp1
 	     + tz1 *       c34 * tmp1 )
@@ -1879,7 +1881,7 @@ c   form the second block sub-diagonal
 	* ( c34 - c1345 ) * tmp2 * u[i][j+1][k][1];
       b[i][j][4][2] =  dt * ty2
 	* ( C1 * ( u[i][j+1][k][4] * tmp1 )
-	    - 0.50 * C2 
+	    - 0.50 * C2
 	    * ( (  u[i][j+1][k][1]*u[i][j+1][k][1]
 		   + 3.0 * u[i][j+1][k][2]*u[i][j+1][k][2]
 		   + u[i][j+1][k][3]*u[i][j+1][k][3] ) * tmp2 ) )
@@ -1982,13 +1984,13 @@ static void l2norm (int nx0, int ny0, int nz0,
 		    int ist, int iend,
 		    int jst, int jend,
 /*--------------------------------------------------------------------
-c   To improve cache performance, second two dimensions padded by 1 
+c   To improve cache performance, second two dimensions padded by 1
 c   for even number sizes only.  Only needed in v.
 --------------------------------------------------------------------*/
 		    double v[ISIZ1][ISIZ2/2*2+1][ISIZ3/2*2+1][5],
 		    double sum[5]) {
 
-#pragma omp parallel 
+#pragma omp parallel
 {
 
 /*--------------------------------------------------------------------
@@ -2001,7 +2003,7 @@ c  local variables
   int i, j, k, m;
   double sum0=0.0, sum1=0.0, sum2=0.0, sum3=0.0, sum4=0.0;
 
-#pragma omp single  
+#pragma omp single
   for (m = 0; m < 5; m++) {
     sum[m] = 0.0;
   }
@@ -2027,9 +2029,9 @@ c  local variables
       sum[3] += sum3;
       sum[4] += sum4;
   }
-#pragma omp barrier  
-  
-#pragma omp single  
+#pragma omp barrier
+
+#pragma omp single
   for (m = 0;  m < 5; m++) {
     sum[m] = sqrt ( sum[m] / ( (nx0-2)*(ny0-2)*(nz0-2) ) );
   }
@@ -2242,7 +2244,7 @@ c   initialize
 static void read_input(void) {
 
   FILE *fp;
-    
+
 /*--------------------------------------------------------------------
 c    if input file does not exist, it uses defaults
 c       ipr = 1 for detailed progress output
@@ -2264,7 +2266,7 @@ c       nx, ny, nz = number of grid points in x, y, z directions
     while(fgetc(fp) != '\n'); while(fgetc(fp) != '\n');
     fscanf(fp, "%d%d", &ipr, &inorm);
     while(fgetc(fp) != '\n');
-    
+
     while(fgetc(fp) != '\n'); while(fgetc(fp) != '\n');
     fscanf(fp, "%d", &itmax);
     while(fgetc(fp) != '\n');
@@ -2272,16 +2274,16 @@ c       nx, ny, nz = number of grid points in x, y, z directions
     while(fgetc(fp) != '\n'); while(fgetc(fp) != '\n');
     fscanf(fp, "%lf", &dt);
     while(fgetc(fp) != '\n');
-    
+
     while(fgetc(fp) != '\n'); while(fgetc(fp) != '\n');
     fscanf(fp, "%lf", &omega);
     while(fgetc(fp) != '\n');
-    
+
     while(fgetc(fp) != '\n'); while(fgetc(fp) != '\n');
     fscanf(fp, "%lf%lf%lf%lf%lf",
 	   &tolrsd[0], &tolrsd[1], &tolrsd[2], &tolrsd[3], &tolrsd[4]);
     while(fgetc(fp) != '\n');
-    
+
     while(fgetc(fp) != '\n'); while(fgetc(fp) != '\n');
     fscanf(fp, "%d%d%d", &nx0, &ny0, &nz0);
     while(fgetc(fp) != '\n');
@@ -2328,7 +2330,7 @@ c   check problem size
 
 static void rhs(void) {
 
-#pragma omp parallel 
+#pragma omp parallel
 {
 
 /*--------------------------------------------------------------------
@@ -2352,7 +2354,7 @@ c  local variables
   double  u21jm1, u31jm1, u41jm1, u51jm1;
   double  u21km1, u31km1, u41km1, u51km1;
 
-#pragma omp for  
+#pragma omp for
   for (i = 0; i <= nx-1; i++) {
     for (j = 0; j <= ny-1; j++) {
       for (k = 0; k <= nz-1; k++) {
@@ -2370,7 +2372,7 @@ c   xi-direction flux differences
   L1 = 0;
   L2 = nx-1;
 
-#pragma omp for  
+#pragma omp for
   for (i = L1; i <= L2; i++) {
     for (j = jst; j <= jend; j++) {
       for (k = 1; k <= nz - 2; k++) {
@@ -2382,16 +2384,16 @@ c   xi-direction flux differences
 		      + u[i][j][k][3] * u[i][j][k][3] )
 	  / u[i][j][k][0];
 
-	flux[i][j][k][1] = u[i][j][k][1] * u21 + C2 * 
+	flux[i][j][k][1] = u[i][j][k][1] * u21 + C2 *
 	  ( u[i][j][k][4] - q );
 	flux[i][j][k][2] = u[i][j][k][2] * u21;
 	flux[i][j][k][3] = u[i][j][k][3] * u21;
 	flux[i][j][k][4] = ( C1 * u[i][j][k][4] - C2 * q ) * u21;
       }
-    } 
-  } 
+    }
+  }
 
-#pragma omp for  
+#pragma omp for
   for (j = jst; j <= jend; j++) {
     for (k = 1; k <= nz - 2; k++) {
       for (i = ist; i <= iend; i++) {
@@ -2507,7 +2509,7 @@ c   eta-direction flux differences
   L1 = 0;
   L2 = ny-1;
 
-#pragma omp for  
+#pragma omp for
   for (i = ist; i <= iend; i++) {
     for (j = L1; j <= L2; j++) {
       for (k = 1; k <= nz - 2; k++) {
@@ -2527,7 +2529,7 @@ c   eta-direction flux differences
     }
   }
 
-#pragma omp for  
+#pragma omp for
   for (i = ist; i <= iend; i++) {
     for (k = 1; k <= nz - 2; k++) {
       for (j = jst; j <= jend; j++) {
@@ -2641,7 +2643,7 @@ c   fourth-order dissipation
 /*--------------------------------------------------------------------
 c   zeta-direction flux differences
 --------------------------------------------------------------------*/
-#pragma omp for  
+#pragma omp for
   for (i = ist; i <= iend; i++) {
     for (j = jst; j <= jend; j++) {
       for (k = 0; k <= nz-1; k++) {
@@ -2654,7 +2656,7 @@ c   zeta-direction flux differences
 	  / u[i][j][k][0];
 
 	flux[i][j][k][1] = u[i][j][k][1] * u41;
-	flux[i][j][k][2] = u[i][j][k][2] * u41; 
+	flux[i][j][k][2] = u[i][j][k][2] * u41;
 	flux[i][j][k][3] = u[i][j][k][3] * u41 + C2 * (u[i][j][k][4]-q);
 	flux[i][j][k][4] = ( C1 * u[i][j][k][4] - C2 * q ) * u41;
       }
@@ -3067,7 +3069,7 @@ c   formed, if applicable on given architecture, before timestepping).
 --------------------------------------------------------------------*/
 #pragma omp parallel private(i,j,k,m)
 {
-#pragma omp for    
+#pragma omp for
   for (i = 0; i < ISIZ1; i++) {
     for (j = 0; j < ISIZ2; j++) {
       for (k = 0; k < 5; k++) {
@@ -3085,7 +3087,7 @@ c   formed, if applicable on given architecture, before timestepping).
 c   compute the steady-state residuals
 --------------------------------------------------------------------*/
   rhs();
- 
+
 /*--------------------------------------------------------------------
 c   compute the L2 norms of newton iteration residuals
 --------------------------------------------------------------------*/
@@ -3096,7 +3098,7 @@ c   compute the L2 norms of newton iteration residuals
 
   timer_clear(1);
   timer_start(1);
- 
+
 /*--------------------------------------------------------------------
 c   the timestep loop
 --------------------------------------------------------------------*/
@@ -3105,17 +3107,17 @@ c   the timestep loop
   for (istep = 1; istep <= itmax; istep++) {
 
     if (istep%20  ==  0 || istep  ==  itmax || istep  ==  1) {
-#pragma omp master	
+#pragma omp master
       printf(" Time step %4d\n", istep);
     }
 
 #pragma omp parallel private(istep,i,j,k,m)
-{  
- 
+{
+
 /*--------------------------------------------------------------------
 c   perform SSOR iteration
 --------------------------------------------------------------------*/
-#pragma omp for    
+#pragma omp for
     for (i = ist; i <= iend; i++) {
       for (j = jst; j <= jend; j++) {
 	for (k = 1; k <= nz - 2; k++) {
@@ -3131,7 +3133,7 @@ c   perform SSOR iteration
 c   form the lower triangular part of the jacobian matrix
 --------------------------------------------------------------------*/
       jacld(k);
- 
+
 /*--------------------------------------------------------------------
 c   perform the lower triangular solution
 --------------------------------------------------------------------*/
@@ -3139,10 +3141,10 @@ c   perform the lower triangular solution
 	   omega,
 	   rsd,
 	   a, b, c, d,
-	   ist, iend, jst, jend, 
+	   ist, iend, jst, jend,
 	   nx0, ny0 );
     }
-    
+
 #pragma omp barrier
 
     for (k = nz - 2; k >= 1; k--) {
@@ -3161,8 +3163,8 @@ c   perform the upper triangular solution
 	   ist, iend, jst, jend,
 	   nx0, ny0 );
     }
-#pragma omp barrier 
- 
+#pragma omp barrier
+
 /*--------------------------------------------------------------------
 c   update the variables
 --------------------------------------------------------------------*/
@@ -3187,12 +3189,12 @@ c   compute the max-norms of newton iteration corrections
 	      ist, iend, jst, jend,
 	      rsd, delunm );
     }
- 
+
 /*--------------------------------------------------------------------
 c   compute the steady-state residuals
 --------------------------------------------------------------------*/
     rhs();
- 
+
 /*--------------------------------------------------------------------
 c   compute the max-norms of newton iteration residuals
 --------------------------------------------------------------------*/
@@ -3215,10 +3217,10 @@ c   check the newton-iteration residuals against the tolerance levels
     }
   }
 
- 
+
   timer_stop(1);
   maxtime= timer_read(1);
- 
+
 }
 
 /*--------------------------------------------------------------------
@@ -3228,10 +3230,10 @@ static void verify(double xcr[5], double xce[5], double xci,
 		   char *class, boolean *verified) {
 
 /*--------------------------------------------------------------------
-c  verification routine                         
+c  verification routine
 --------------------------------------------------------------------*/
 
-  double xcrref[5],xceref[5],xciref, 
+  double xcrref[5],xceref[5],xciref,
     xcrdif[5],xcedif[5],xcidif,
     epsilon, dtref;
   int m;
@@ -3355,7 +3357,7 @@ c   after 250 time steps, with  DT = 2.0d+0.0
       xcrref[4] = 7.3087969592545314e+03;
 
 /*--------------------------------------------------------------------
-c   Reference values of RMS-norms of solution error, for the (102X102X102) 
+c   Reference values of RMS-norms of solution error, for the (102X102X102)
 c   grid, after 250 time steps, with  DT = 2.0d+0.0
 --------------------------------------------------------------------*/
       xceref[0] = 1.1401176380212709e+02;
@@ -3386,7 +3388,7 @@ c   after 250 time steps, with  DT = 2.0d+0.0
 	xcrref[4] = 1.78078057261061185e+04;
 
 /*--------------------------------------------------------------------
-c   Reference values of RMS-norms of solution error, for the (162X162X162) 
+c   Reference values of RMS-norms of solution error, for the (162X162X162)
 c   grid, after 250 time steps, with  DT = 2.0d+0.0
 --------------------------------------------------------------------*/
 	xceref[0] = 2.15986399716949279e+02;
@@ -3405,7 +3407,7 @@ c   after 250 time steps, with DT = 2.0d+0.0
       }
 
 /*--------------------------------------------------------------------
-c    verification test for residuals if gridsize is either 12X12X12 or 
+c    verification test for residuals if gridsize is either 12X12X12 or
 c    64X64X64 or 102X102X102 or 162X162X162
 --------------------------------------------------------------------*/
 
@@ -3413,10 +3415,10 @@ c    64X64X64 or 102X102X102 or 162X162X162
 c    Compute the difference of solution values and the known reference values.
 --------------------------------------------------------------------*/
   for (m = 0; m < 5; m++) {
-           
+
     xcrdif[m] = fabs((xcr[m]-xcrref[m])/xcrref[m]);
     xcedif[m] = fabs((xce[m]-xceref[m])/xceref[m]);
-           
+
   }
   xcidif = fabs((xci - xciref)/xciref);
 
@@ -3427,7 +3429,7 @@ c    Output the comparison of computed results to known cases.
   if (*class != 'U') {
     printf("\n Verification being performed for class %1c\n", *class);
     printf(" Accuracy setting for epsilon = %20.13e\n", epsilon);
-    if (fabs(dt-dtref) > epsilon) {  
+    if (fabs(dt-dtref) > epsilon) {
       *verified = FALSE;
       *class = 'U';
       printf(" DT does not match the reference value of %15.8e\n", dtref);
@@ -3460,7 +3462,7 @@ c    Output the comparison of computed results to known cases.
   } else {
     printf(" RMS-norms of solution error\n");
   }
-        
+
   for (m = 0; m < 5; m++) {
     if (*class  ==  'U') {
       printf("          %2d  %20.13e\n", m, xce[m]);
@@ -3473,7 +3475,7 @@ c    Output the comparison of computed results to known cases.
 	     m,xce[m],xceref[m],xcedif[m]);
     }
   }
-        
+
   if (*class != 'U') {
     printf(" Comparison of surface integral\n");
   } else {
@@ -3484,7 +3486,7 @@ c    Output the comparison of computed results to known cases.
     printf("              %20.13e\n", xci);
   } else if (xcidif > epsilon) {
     *verified = FALSE;
-    printf(" FAILURE:     %20.13e%20.13e%20.13e\n", 
+    printf(" FAILURE:     %20.13e%20.13e%20.13e\n",
 	   xci, xciref, xcidif);
   } else {
     printf("              %20.13e%20.13e%20.13e\n",

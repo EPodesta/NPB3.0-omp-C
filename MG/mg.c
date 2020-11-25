@@ -1,10 +1,10 @@
 /*--------------------------------------------------------------------
-  
+
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - MG
 
   This benchmark is an OpenMP C version of the NPB MG code.
-  
-  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions 
+
+  The OpenMP C 2.3 versions are derived by RWCP from the serial Fortran versions
   in "NPB 2.3-serial" developed by NAS. 3.0 translation is performed by the UVSQ.
 
   Permission to use, copy, distribute and modify this software for any
@@ -14,9 +14,9 @@
   Information on OpenMP activities at RWCP is available at:
 
            http://pdplab.trc.rwcp.or.jp/pdperf/Omni/
-  
+
   Information on NAS Parallel Benchmarks 2.3 is available at:
-  
+
            http://www.nas.nasa.gov/NAS/NPB/
 
 --------------------------------------------------------------------*/
@@ -30,7 +30,7 @@
   OpenMP C version: S. Satoh
 
   3.0 structure translation: F. Conti
-  
+
 --------------------------------------------------------------------*/
 
 #include "npb-C.h"
@@ -85,12 +85,14 @@ c------------------------------------------------------------------------*/
     double t, tinit, mflops;
     int nthreads = 1;
 
+	omp_set_num_threads(16);
+
 /*-------------------------------------------------------------------------
 c These arrays are in common because they are quite large
 c and probably shouldn't be allocated on the stack. They
-c are always passed as subroutine args. 
+c are always passed as subroutine args.
 c------------------------------------------------------------------------*/
-    
+
     double ****u, ***v, ****r;
     double a[4], c[4];
 
@@ -130,7 +132,7 @@ c---------------------------------------------------------------------*/
 	fclose(fp);
     } else {
 	printf(" No input file. Using compiled defaults\n");
-    
+
 	lt = LT_DEFAULT;
 	nit = NIT_DEFAULT;
 	nx[lt] = NX_DEFAULT;
@@ -194,11 +196,11 @@ c-------------------------------------------------------------------*/
 	c[2] =  -1.0/61.0;
 	c[3] =   0.0;
     }
-    
+
     lb = 1;
 
     setup(&n1,&n2,&n3,lt);
-      
+
     u = (double ****)malloc((lt+1)*sizeof(double ***));
     for (l = lt; l >=1; l--) {
 	u[l] = (double ***)malloc(m3[l]*sizeof(double **));
@@ -251,10 +253,10 @@ c---------------------------------------------------------------------*/
 
     setup(&n1,&n2,&n3,lt);
 
-    zero3(u[lt],n1,n2,n3); 
+    zero3(u[lt],n1,n2,n3);
 
     zran3(v,n1,n2,n3,nx[lt],ny[lt],lt);
-    
+
 
     timer_stop(T_INIT);
     timer_start(T_BENCH);
@@ -269,9 +271,9 @@ c---------------------------------------------------------------------*/
     norm2u3(r[lt],n1,n2,n3,&rnm2,&rnmu,nx[lt],ny[lt],nz[lt]);
 
 #pragma omp parallel
-{   
+{
 #if defined(_OPENMP)
-#pragma omp master  
+#pragma omp master
   nthreads = omp_get_num_threads();
 #endif /* _OPENMP */
 } /* end parallel */
@@ -324,8 +326,8 @@ c---------------------------------------------------------------------*/
 	mflops = 0.0;
     }
 
-    c_print_results("MG", Class, nx[lt], ny[lt], nz[lt], 
-		    nit, nthreads, t, mflops, "          floating point", 
+    c_print_results("MG", Class, nx[lt], ny[lt], nz[lt],
+		    nit, nthreads, t, mflops, "          floating point",
 		    verified, NPBVERSION, COMPILETIME,
 		    CS1, CS2, CS3, CS4, CS5, CS6, CS7);
 }
@@ -441,17 +443,17 @@ c-------------------------------------------------------------------*/
 c     psinv applies an approximate inverse as smoother:  u = u + Cr
 c
 c     This  implementation costs  15A + 4M per result, where
-c     A and M denote the costs of Addition and Multiplication.  
+c     A and M denote the costs of Addition and Multiplication.
 c     Presuming coefficient c(3) is zero (the NPB assumes this,
 c     but it is thus not a general case), 2A + 1M may be eliminated,
 c     resulting in 13A + 3M.
-c     Note that this vectorizes, and is also fine for cache 
-c     based machines.  
+c     Note that this vectorizes, and is also fine for cache
+c     based machines.
 c-------------------------------------------------------------------*/
 
     int i3, i2, i1;
     double r1[M], r2[M];
-#pragma omp parallel for default(shared) private(i1,i2,i3,r1,r2)   
+#pragma omp parallel for default(shared) private(i1,i2,i3,r1,r2)
     for (i3 = 1; i3 < n3-1; i3++) {
 	for (i2 = 1; i2 < n2-1; i2++) {
             for (i1 = 0; i1 < n1; i1++) {
@@ -502,13 +504,13 @@ c-------------------------------------------------------------------*/
 c     resid computes the residual:  r = v - Au
 c
 c     This  implementation costs  15A + 4M per result, where
-c     A and M denote the costs of Addition (or Subtraction) and 
-c     Multiplication, respectively. 
+c     A and M denote the costs of Addition (or Subtraction) and
+c     Multiplication, respectively.
 c     Presuming coefficient a(1) is zero (the NPB assumes this,
 c     but it is thus not a general case), 3A + 1M may be eliminated,
 c     resulting in 12A + 3M.
-c     Note that this vectorizes, and is also fine for cache 
-c     based machines.  
+c     Note that this vectorizes, and is also fine for cache
+c     based machines.
 c-------------------------------------------------------------------*/
 
     int i3, i2, i1;
@@ -561,13 +563,13 @@ static void rprj3( double ***r, int m1k, int m2k, int m3k,
 c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c     rprj3 projects onto the next coarser grid, 
+c     rprj3 projects onto the next coarser grid,
 c     using a trilinear Finite Element projection:  s = r' = P r
-c     
+c
 c     This  implementation costs  20A + 4M per result, where
-c     A and M denote the costs of Addition and Multiplication.  
-c     Note that this vectorizes, and is also fine for cache 
-c     based machines.  
+c     A and M denote the costs of Addition and Multiplication.
+c     Note that this vectorizes, and is also fine for cache
+c     based machines.
 c-------------------------------------------------------------------*/
 
     int j3, j2, j1, i3, i2, i1, d1, d2, d3;
@@ -647,11 +649,11 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c     interp adds the trilinear interpolation of the correction
 c     from the coarser grid to the current approximation:  u = u + Qu'
-c     
+c
 c     Observe that this  implementation costs  16A + 4M, where
-c     A and M denote the costs of Addition and Multiplication.  
-c     Note that this vectorizes, and is also fine for cache 
-c     based machines.  Vector machines may get slightly better 
+c     A and M denote the costs of Addition and Multiplication.
+c     Note that this vectorizes, and is also fine for cache
+c     based machines.  Vector machines may get slightly better
 c     performance however, with 8 separate "do i1" loops, rather than 4.
 c-------------------------------------------------------------------*/
 
@@ -708,7 +710,7 @@ c      parameter( m=535 )
             d1 = 1;
             t1 = 0;
 	}
-         
+
 	if (n2 == 3) {
             d2 = 2;
             t2 = 1;
@@ -716,7 +718,7 @@ c      parameter( m=535 )
             d2 = 1;
             t2 = 0;
 	}
-         
+
 	if (n3 == 3) {
             d3 = 2;
             t3 = 1;
@@ -724,7 +726,7 @@ c      parameter( m=535 )
             d3 = 1;
             t3 = 0;
 	}
-         
+
 #pragma omp parallel default(shared) private(i1,i2,i3)
     {
 #pragma omp for
@@ -867,7 +869,7 @@ static void comm3(double ***u, int n1, int n2, int n3, int kk) {
 c-------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
-c     comm3 organizes the communication on all borders 
+c     comm3 organizes the communication on all borders
 c-------------------------------------------------------------------*/
 
     int i1, i2, i3;
@@ -919,8 +921,8 @@ c-------------------------------------------------------------------*/
 
 #define MM	10
 #define	A	pow(5.0,13)
-#define	X	314159265.e0    
-    
+#define	X	314159265.e0
+
     int i0, m0, m1;
     int i1, i2, i3, d1, e1, e2, e3;
     double xx, x0, x1, a1, a2, ai;
@@ -945,7 +947,7 @@ c-------------------------------------------------------------------*/
     e3 = ie3 - is3 + 2;
     x0 = X;
     rdummy = randlc( &x0, ai );
-    
+
     for (i3 = 1; i3 < e3; i3++) {
 	x1 = x0;
 	for (i2 = 1; i2 < e2; i2++) {
@@ -1061,7 +1063,7 @@ c-------------------------------------------------------------------*/
     }
     printf("\n");*/
 
-#pragma omp parallel for private(i2, i1)    
+#pragma omp parallel for private(i2, i1)
     for (i3 = 0; i3 < n3; i3++) {
 	for (i2 = 0; i2 < n2; i2++) {
             for (i1 = 0; i1 < n1; i1++) {
@@ -1074,7 +1076,7 @@ c-------------------------------------------------------------------*/
     }
     for (i = MM-1; i >= m1; i--) {
 	z[j3[i][1]][j2[i][1]][j1[i][1]] = 1.0;
-    } 
+    }
     comm3(z,n1,n2,n3,k);
 
 /*--------------------------------------------------------------------
@@ -1136,7 +1138,7 @@ c-------------------------------------------------------------------*/
 	rdummy = randlc( &aj, aj );
 	nj = nj/2;
     }
-    
+
     return (power);
 }
 
